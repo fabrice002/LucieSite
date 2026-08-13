@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\SiteContent;
+use Database\Seeders\SiteContentSeeder;
 
 it('affiche sur la page publique le texte modifié et invalide le cache', function () {
     $bloc = SiteContent::factory()->key('accueil', "Page d'accueil")->content([
@@ -44,13 +45,13 @@ it('sert les textes de la locale courante', function () {
 });
 
 it('crée les blocs du site sans écraser une modification existante', function () {
-    $this->seed(Database\Seeders\SiteContentSeeder::class);
+    $this->seed(SiteContentSeeder::class);
 
     $accueil = SiteContent::query()->where('key', 'accueil')->sole();
     $accueil->update(['content' => [...$accueil->content, 'hero_titre' => 'Texte de la cliente']]);
 
     // Relancer le seeder ne doit rien écraser.
-    $this->seed(Database\Seeders\SiteContentSeeder::class);
+    $this->seed(SiteContentSeeder::class);
 
     expect($accueil->fresh()->content['hero_titre'])->toBe('Texte de la cliente');
     expect(SiteContent::query()->where('key', 'accueil')->count())->toBe(1);

@@ -5,6 +5,7 @@ use App\Enums\DocumentType;
 use App\Models\Application;
 use App\Notifications\ApplicationReceived;
 use App\Notifications\ApplicationSubmitted;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
@@ -95,7 +96,7 @@ it('enregistre le dossier, stocke les documents sur le disque privé et notifie'
     // Les deux notifications partent, et elles sont mises en file d'attente.
     Notification::assertSentOnDemand(ApplicationSubmitted::class);
     Notification::assertSentOnDemand(ApplicationReceived::class);
-    expect(new ApplicationSubmitted($application))->toBeInstanceOf(Illuminate\Contracts\Queue\ShouldQueue::class);
+    expect(new ApplicationSubmitted($application))->toBeInstanceOf(ShouldQueue::class);
 });
 
 it('refuse un exécutable renommé en .pdf', function () {
