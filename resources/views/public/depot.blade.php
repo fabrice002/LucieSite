@@ -134,7 +134,7 @@
                     <label for="cv" class="{{ $labelClass }}">
                         {{ content('depot.label_cv', 'CV au format canadien') }} <span class="text-red-600">*</span>
                     </label>
-                    <input type="file" id="cv" name="cv" required accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
+                    <input type="file" id="cv" name="cv" required accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_cv') }}</p>
                     @error('cv')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -143,7 +143,7 @@
                     <label for="tcf_tef" class="{{ $labelClass }}">
                         {{ content('depot.label_tcf_tef', 'Résultat TCF ou TEF') }} <span class="text-red-600">*</span>
                     </label>
-                    <input type="file" id="tcf_tef" name="tcf_tef" required accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
+                    <input type="file" id="tcf_tef" name="tcf_tef" required accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_tcf_tef') }}</p>
                     @error('tcf_tef')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -152,7 +152,7 @@
                     <label for="passeport" class="{{ $labelClass }}">
                         {{ content('depot.label_passeport', 'Passeport') }}
                     </label>
-                    <input type="file" id="passeport" name="passeport" accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
+                    <input type="file" id="passeport" name="passeport" accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_passeport') }}</p>
                     @error('passeport')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -161,7 +161,7 @@
                     <label for="diplomes" class="{{ $labelClass }}">
                         {{ content('depot.label_diplomes', 'Diplômes') }}
                     </label>
-                    <input type="file" id="diplomes" name="diplomes[]" multiple accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
+                    <input type="file" id="diplomes" name="diplomes[]" multiple accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_diplomes') }}</p>
                     @error('diplomes.*')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -170,7 +170,7 @@
                     <label for="autres" class="{{ $labelClass }}">
                         {{ content('depot.label_autres', 'Autres documents') }}
                     </label>
-                    <input type="file" id="autres" name="autres[]" multiple accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
+                    <input type="file" id="autres" name="autres[]" multiple accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_autres') }}</p>
                     @error('autres.*')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>

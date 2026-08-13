@@ -20,6 +20,33 @@ import 'filepond/dist/filepond.css';
 
 FilePond.registerPlugin(FilePondPluginFileValidateType, FilePondPluginFileValidateSize);
 
+const TYPES_ACCEPTES = ['application/pdf', 'image/jpeg', 'image/png'];
+
+const TYPES_PAR_EXTENSION = {
+    pdf: 'application/pdf',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+};
+
+/**
+ * Détermine le type d'un fichier.
+ *
+ * Android renvoie fréquemment un type vide ou « application/octet-stream »
+ * selon l'application depuis laquelle le fichier est choisi. On retombe alors
+ * sur l'extension. Ce n'est qu'un filtre de confort : le serveur revalide de
+ * toute façon le contenu réel avec la règle mimes.
+ */
+function detecterType(source, type) {
+    if (TYPES_ACCEPTES.includes(type)) {
+        return Promise.resolve(type);
+    }
+
+    const extension = (source.name ?? '').split('.').pop()?.toLowerCase() ?? '';
+
+    return Promise.resolve(TYPES_PAR_EXTENSION[extension] ?? type);
+}
+
 const form = document.querySelector('[data-depot-form]');
 
 if (form) {
@@ -114,7 +141,6 @@ function initialiserTeleversements(form) {
         chunkSize: 512 * 1024,
         chunkRetryDelays: [1000, 3000, 6000, 10000, 20000],
         maxFileSize: '10MB',
-        acceptedFileTypes: ['application/pdf', 'image/jpeg', 'image/png'],
         labelMaxFileSizeExceeded: 'Le fichier est trop volumineux',
         labelMaxFileSize: 'Taille maximale : {filesize}',
         labelFileTypeNotAllowed: 'Format de fichier refusé',
@@ -130,6 +156,12 @@ function initialiserTeleversements(form) {
             maxFiles: input.multiple ? 10 : 1,
             // La compression se déclenche à l'ajout, l'envoi part ensuite.
             instantUpload: false,
+            // Attention : FilePond fait primer les attributs de l'élément sur les
+            // options passées ici, et le plugin de type traduit l'attribut accept
+            // en acceptedFileTypes. L'attribut accept de la vue doit donc contenir
+            // des types MIME, jamais des extensions.
+            acceptedFileTypes: TYPES_ACCEPTES,
+            fileValidateTypeDetectType: detecterType,
         });
 
         pond.on('addfile', async (erreur, fichier) => {
