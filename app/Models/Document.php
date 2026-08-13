@@ -60,4 +60,29 @@ class Document extends Model
     {
         return $this->belongsTo(Application::class);
     }
+
+    /**
+     * Get the file name to hand back on download.
+     *
+     * Le nom d'origine vient du navigateur du candidat et peut arriver sans
+     * extension. Sans elle, le fichier téléchargé n'est associé à aucune
+     * application et l'administratrice doit la rajouter à la main. On complète
+     * donc à partir de l'extension du fichier réellement stocké.
+     */
+    public function downloadName(): string
+    {
+        $name = trim($this->original_name);
+
+        if ($name === '') {
+            $name = $this->type->value;
+        }
+
+        if (pathinfo($name, PATHINFO_EXTENSION) !== '') {
+            return $name;
+        }
+
+        $extension = pathinfo($this->path, PATHINFO_EXTENSION);
+
+        return $extension !== '' ? $name.'.'.$extension : $name;
+    }
 }

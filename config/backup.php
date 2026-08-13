@@ -25,9 +25,14 @@ return [
                 /*
                  * The list of directories and files that will be included in the backup.
                  */
+                /*
+                 * Le code source vit dans Git : il n'a rien à faire ici. On
+                 * sauvegarde ce qui est irremplaçable — les pièces déposées par
+                 * les candidats et les photos des témoignages.
+                 */
                 'include' => [
-                    base_path(),
-                    // storage_path(),  // Include if you use zero downtime deployments and don't follow symlinks
+                    storage_path('app/private'),
+                    storage_path('app/public'),
                 ],
 
                 /*
@@ -39,6 +44,9 @@ return [
                     base_path('vendor'),
                     base_path('node_modules'),
                     storage_path('framework'),
+                    storage_path('logs'),
+                    // Téléversements en cours : sans valeur et purgés chaque heure.
+                    storage_path('app/private/tmp-uploads'),
                 ],
 
                 /*
@@ -162,10 +170,12 @@ return [
 
             /*
              * The disk names on which the backups will be stored.
+             *
+             * En production, la sauvegarde DOIT partir sur un stockage distant :
+             * une sauvegarde qui vit sur le même serveur que les données ne
+             * protège de rien. Renseigner BACKUP_DISKS=s3 dans le .env.
              */
-            'disks' => [
-                'local',
-            ],
+            'disks' => explode(',', (string) env('BACKUP_DISKS', 'local')),
 
             /*
              * Determines whether to allow backups to continue when some targets fail instead of failing completely.
@@ -220,13 +230,18 @@ return [
      * the `Spatie\Backup\Notifications\Notifications` classes.
      */
     'notifications' => [
+        /*
+         * On n'alerte que sur les problèmes : une sauvegarde réussie ne doit pas
+         * remplir la boîte de l'administratrice, sinon les vraies alertes se
+         * noient dans le bruit et finissent ignorées.
+         */
         'notifications' => [
             BackupHasFailedNotification::class => ['mail'],
             UnhealthyBackupWasFoundNotification::class => ['mail'],
             CleanupHasFailedNotification::class => ['mail'],
-            BackupWasSuccessfulNotification::class => ['mail'],
-            HealthyBackupWasFoundNotification::class => ['mail'],
-            CleanupWasSuccessfulNotification::class => ['mail'],
+            BackupWasSuccessfulNotification::class => [],
+            HealthyBackupWasFoundNotification::class => [],
+            CleanupWasSuccessfulNotification::class => [],
         ],
 
         /*
@@ -236,7 +251,7 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => 'your@example.com',
+            'to' => env('MAIL_ADMIN_ADDRESS', env('MAIL_FROM_ADDRESS')),
 
             'from' => [
                 'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),

@@ -33,7 +33,12 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // 'serve' => false : ce disque contient des scans de passeports.
+            // À true, Laravel enregistre une route /storage/{path} qui les sert
+            // sur URL signée — une seconde voie de téléchargement qui
+            // contournerait DocumentPolicy. Le seul accès autorisé passe par
+            // la route documents.download.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

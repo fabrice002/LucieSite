@@ -56,12 +56,16 @@ Route::post('suivre-mon-dossier', [ApplicationTrackingController::class, 'show']
 */
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    // Le back-office Filament est le seul espace authentifié. Ces redirections
+    // gardent valides les anciennes adresses et les liens du starter kit.
+    Route::redirect('dashboard', '/admin')->name('dashboard');
+    Route::redirect('settings', '/admin/profile');
+    Route::redirect('settings/profile', '/admin/profile')->name('profile.edit');
+    Route::redirect('settings/security', '/admin/securite')->name('security.edit');
+    Route::redirect('settings/appearance', '/admin/profile')->name('appearance.edit');
 
     // Les documents ne sont jamais servis par une URL directe : cette route est
     // authentifiée et protégée par DocumentPolicy.
     Route::get('documents/{document}/telecharger', DocumentDownloadController::class)
         ->name('documents.download');
 });
-
-require __DIR__.'/settings.php';

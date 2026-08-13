@@ -4,6 +4,7 @@ use App\Actions\SubmitApplication;
 use App\Models\Document;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -40,6 +41,35 @@ it('autorise un agent du cabinet', function () {
 
     $response->assertOk();
     $response->assertDownload($this->document->original_name);
+});
+
+it('télécharge toujours le fichier avec une extension', function () {
+    Role::findOrCreate('agent');
+    $user = tap(User::factory()->create())->assignRole('agent');
+
+    // Cas dégradé : le nom d'origine n'a pas été transmis par le navigateur.
+    $document = Document::factory()->create([
+        'original_name' => 'document',
+        'path' => 'documents/LN-2026-00002/'.Str::uuid()->toString().'.pdf',
+    ]);
+
+    Storage::disk(SubmitApplication::DISK)->put($document->path, 'contenu');
+
+    expect($document->downloadName())->toBe('document.pdf');
+
+    $this->actingAs($user)
+        ->get(route('documents.download', $document))
+        ->assertOk()
+        ->assertDownload('document.pdf');
+});
+
+it('conserve le nom d\'origine quand il porte déjà une extension', function () {
+    $document = Document::factory()->make([
+        'original_name' => 'Transcript UY1 L1.pdf',
+        'path' => 'documents/LN-2026-00003/abc.pdf',
+    ]);
+
+    expect($document->downloadName())->toBe('Transcript UY1 L1.pdf');
 });
 
 it('ne divulgue pas les documents par une URL directe sur le disque privé', function () {

@@ -48,7 +48,7 @@ class BuildApplicationArchive
                 '%s-%d - %s',
                 $type,
                 $compteurs[$type],
-                $this->assainir($document->original_name),
+                $this->assainir($document->downloadName()),
             );
 
             $zip->addFromString($nom, (string) $disk->get($document->path));

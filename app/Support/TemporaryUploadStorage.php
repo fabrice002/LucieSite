@@ -39,20 +39,26 @@ class TemporaryUploadStorage
     /** Clé de session listant les jetons appartenant au visiteur. */
     private const SESSION_KEY = 'temporary_uploads';
 
+    /** Nom de repli quand le client n'en a jamais transmis. */
+    private const DEFAULT_NAME = 'document';
+
     /**
      * Open a new transfer and return its opaque token.
+     *
+     * FilePond n'envoie pas le nom du fichier sur cette requête : il n'arrive
+     * qu'avec la première tranche. Le nom reste donc vide jusque-là.
      */
-    public function begin(string $originalName, int $length): string
+    public function begin(int $length): string
     {
         throw_if($length <= 0 || $length > self::MAX_BYTES, new RuntimeException('Taille annoncée invalide.'));
 
         $token = Str::uuid()->toString();
 
-        $this->disk()->put($this->path($token, 'meta.json'), (string) json_encode([
-            'name' => $originalName,
+        $this->writeMeta($token, [
+            'name' => null,
             'length' => $length,
             'created_at' => now()->toIso8601String(),
-        ], JSON_THROW_ON_ERROR));
+        ]);
 
         $this->disk()->put($this->path($token, 'data'), '');
 
@@ -63,11 +69,20 @@ class TemporaryUploadStorage
 
     /**
      * Append a chunk at the given offset. Returns the new offset.
+     *
+     * @param  string|null  $originalName  transmis par FilePond avec chaque tranche
      */
-    public function append(string $token, int $offset, string $chunk): int
+    public function append(string $token, int $offset, string $chunk, ?string $originalName = null): int
     {
         $meta = $this->meta($token);
         $length = strlen($chunk);
+
+        // Le nom du fichier voyage avec les tranches : on le retient dès qu'il
+        // se présente, sinon le document finirait stocké sans extension.
+        if ($originalName !== null && $meta['name'] === null) {
+            $meta['name'] = $this->sanitizeName($originalName);
+            $this->writeMeta($token, $meta);
+        }
 
         throw_if($offset < 0, new RuntimeException('Décalage invalide.'));
         throw_if($offset + $length > $meta['length'], new RuntimeException('Le fichier dépasse la taille annoncée.'));
@@ -120,7 +135,7 @@ class TemporaryUploadStorage
             return null;
         }
 
-        return new UploadedFile($absolute, $meta['name'], null, null, test: true);
+        return new UploadedFile($absolute, $meta['name'] ?? self::DEFAULT_NAME, null, null, test: true);
     }
 
     /**
@@ -197,7 +212,7 @@ class TemporaryUploadStorage
     }
 
     /**
-     * @return array{name: string, length: int, created_at: string}
+     * @return array{name: string|null, length: int, created_at: string}
      */
     private function meta(string $token): array
     {
@@ -207,10 +222,37 @@ class TemporaryUploadStorage
             new RuntimeException('Téléversement introuvable.'),
         );
 
-        /** @var array{name: string, length: int, created_at: string} $meta */
+        /** @var array{name: string|null, length: int, created_at: string} $meta */
         $meta = $this->decode($this->disk()->get($this->path($token, 'meta.json')));
 
         return $meta;
+    }
+
+    /**
+     * @param  array{name: string|null, length: int, created_at: string}  $meta
+     */
+    private function writeMeta(string $token, array $meta): void
+    {
+        $this->disk()->put(
+            $this->path($token, 'meta.json'),
+            (string) json_encode($meta, JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /**
+     * Keep only the file name, never a path.
+     *
+     * Ce nom vient du client : il ne sert qu'à l'affichage et au nom du
+     * téléchargement, jamais à écrire sur le disque.
+     */
+    private function sanitizeName(string $name): string
+    {
+        $name = basename(str_replace('\\', '/', $name));
+        $name = trim($name);
+
+        return $name !== '' && $name !== '.' && $name !== '..'
+            ? Str::limit($name, 180, '')
+            : self::DEFAULT_NAME;
     }
 
     /**

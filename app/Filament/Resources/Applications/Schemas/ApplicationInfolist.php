@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Applications\Schemas;
 
 use App\Enums\ApplicationStatus;
 use App\Models\Application;
+use App\Support\ApplicationHistory;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
@@ -75,6 +76,19 @@ class ApplicationInfolist
                                 ->url(fn ($record): string => route('documents.download', $record))
                                 ->openUrlInNewTab(),
                         ]),
+                ]),
+
+            Section::make('Historique du dossier')
+                ->description('Qui a fait quoi, et quand.')
+                ->collapsible()
+                ->schema([
+                    TextEntry::make('historique')
+                        ->hiddenLabel()
+                        ->state(fn (Application $record): string => view(
+                            'filament.infolists.historique-dossier',
+                            ['entrees' => app(ApplicationHistory::class)($record)],
+                        )->render())
+                        ->html(),
                 ]),
 
             Section::make('Traçabilité')

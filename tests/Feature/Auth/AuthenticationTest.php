@@ -27,9 +27,11 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
+        // Le tableau de bord a fusionné avec le back-office : la connexion
+        // mène désormais à /admin (config('fortify.home')).
         $response
             ->assertSessionHasNoErrors()
-            ->assertRedirect(route('dashboard', absolute: false));
+            ->assertRedirect(config('fortify.home'));
 
         $this->assertAuthenticated();
     }

@@ -73,7 +73,9 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    // Tout le monde ici est un membre du cabinet : la connexion mène
+    // directement au back-office, il n'y a pas d'autre espace authentifié.
+    'home' => '/admin',
 
     /*
     |--------------------------------------------------------------------------

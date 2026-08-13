@@ -36,6 +36,6 @@ class DocumentDownloadController extends Controller
             ])
             ->log('Document téléchargé');
 
-        return $disk->download($document->path, $document->original_name);
+        return $disk->download($document->path, $document->downloadName());
     }
 }

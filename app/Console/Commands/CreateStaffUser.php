@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Notifications\StaffAccountCreated;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -70,12 +71,21 @@ class CreateStaffUser extends Command
         ]);
 
         // Le compte est créé par une personne de confiance en console : inutile
-        // de lui demander de vérifier son adresse.
-        $user->forceFill(['email_verified_at' => now()])->save();
+        // de lui demander de vérifier son adresse. En revanche le mot de passe
+        // est provisoire, il devra être remplacé à la première connexion.
+        $user->forceFill([
+            'email_verified_at' => now(),
+            'must_change_password' => true,
+        ])->save();
+
         $user->assignRole($role);
+
+        $user->notify(new StaffAccountCreated($user, $role));
 
         $this->info("Compte {$role} créé pour {$email}.");
         $this->line('Connexion sur '.url('/admin'));
+        $this->line('Un e-mail de bienvenue part en file d\'attente : le worker doit tourner.');
+        $this->comment('Le mot de passe est provisoire, il sera demandé de le changer à la première connexion.');
 
         return self::SUCCESS;
     }

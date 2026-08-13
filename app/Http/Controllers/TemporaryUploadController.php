@@ -26,7 +26,6 @@ class TemporaryUploadController extends Controller
     public function store(Request $request): Response
     {
         $length = (int) $request->header('Upload-Length', '0');
-        $name = (string) ($request->header('Upload-Name') ?? 'document');
 
         if ($length <= 0 || $length > TemporaryUploadStorage::MAX_BYTES) {
             return $this->plain('Fichier trop volumineux.', 413);
@@ -37,7 +36,7 @@ class TemporaryUploadController extends Controller
         }
 
         try {
-            $token = $this->storage->begin($name, $length);
+            $token = $this->storage->begin($length);
         } catch (RuntimeException $exception) {
             return $this->plain($exception->getMessage(), 422);
         }
@@ -54,7 +53,14 @@ class TemporaryUploadController extends Controller
         $offset = (int) $request->header('Upload-Offset', '0');
 
         try {
-            $newOffset = $this->storage->append($token, $offset, $request->getContent());
+            // FilePond transmet le nom du fichier avec chaque tranche, jamais
+            // sur la requête d'ouverture.
+            $newOffset = $this->storage->append(
+                $token,
+                $offset,
+                $request->getContent(),
+                $request->header('Upload-Name'),
+            );
         } catch (RuntimeException $exception) {
             return $this->plain($exception->getMessage(), 422);
         }
