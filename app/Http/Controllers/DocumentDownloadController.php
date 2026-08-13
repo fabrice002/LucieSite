@@ -24,6 +24,18 @@ class DocumentDownloadController extends Controller
 
         abort_unless($disk->exists($document->path), 404);
 
+        // Qui a consulté quelle pièce, et quand : le site héberge des scans de
+        // passeports, cette trace n'est pas optionnelle.
+        activity('document')
+            ->performedOn($document)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'application' => $document->application->reference,
+                'type' => $document->type->value,
+                'original_name' => $document->original_name,
+            ])
+            ->log('Document téléchargé');
+
         return $disk->download($document->path, $document->original_name);
     }
 }

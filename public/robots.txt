@@ -1,2 +1,10 @@
 User-agent: *
-Disallow:
+Allow: /
+
+# Le back-office et les pages de suivi n'ont rien à faire dans un index.
+Disallow: /admin
+Disallow: /login
+Disallow: /dossier-recu
+Disallow: /televersement
+
+Sitemap: /sitemap.xml

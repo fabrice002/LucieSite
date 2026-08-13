@@ -3,28 +3,28 @@
     :description="content('depot.meta_description')"
 >
     @php
-        $labelClass = 'block text-sm font-medium text-slate-800';
-        $inputClass = 'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-base shadow-sm focus:border-brand-600 focus:ring-2 focus:ring-brand-200 focus:outline-none';
-        $fileClass = 'mt-1 block w-full cursor-pointer rounded-md border border-dashed border-slate-300 px-3 py-3 text-sm file:mr-3 file:rounded file:border-0 file:bg-brand-100 file:px-3 file:py-1.5 file:text-brand-800';
-        $helpClass = 'mt-1 text-xs text-slate-500';
-        $errorClass = 'mt-1 text-sm text-red-600';
+        $labelClass = 'block text-sm font-medium text-ink';
+        $inputClass = 'mt-1 block w-full rounded-md border border-line bg-surface-raised px-3 py-2 text-base text-ink shadow-sm focus:border-brand focus:ring-2 focus:ring-brand-line focus:outline-none';
+        $fileClass = 'mt-1 block w-full cursor-pointer rounded-md border border-dashed border-line bg-surface-raised px-3 py-3 text-sm text-ink file:mr-3 file:rounded file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:text-brand-text';
+        $helpClass = 'mt-1 text-xs text-ink-muted';
+        $errorClass = 'mt-1 text-sm text-danger';
     @endphp
 
     <div class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-        <h1 class="text-3xl font-bold tracking-tight text-brand-900">
+        <h1 class="text-3xl font-bold tracking-tight text-ink-strong">
             {{ content('depot.titre', 'Déposer mon dossier') }}
         </h1>
 
-        <p class="mt-4 leading-relaxed text-slate-600">
+        <p class="mt-4 leading-relaxed text-ink-muted">
             {{ content('depot.introduction') }}
         </p>
 
         @if ($errors->any())
-            <div role="alert" class="mt-8 rounded-md border border-red-200 bg-red-50 p-4">
-                <p class="font-medium text-red-800">
+            <div role="alert" class="mt-8 rounded-md border border-danger-line bg-danger-soft p-4">
+                <p class="font-medium text-danger-ink">
                     Votre dossier n'a pas pu être envoyé. Corrigez les points suivants :
                 </p>
-                <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
+                <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-danger-ink">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -48,14 +48,14 @@
 
             {{-- Identité --}}
             <fieldset class="space-y-5">
-                <legend class="text-lg font-semibold text-brand-900">
+                <legend class="text-lg font-semibold text-ink-strong">
                     {{ content('depot.section_identite', 'Vos informations') }}
                 </legend>
 
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="first_name" class="{{ $labelClass }}">
-                            {{ content('depot.label_prenom', 'Prénom') }} <span class="text-red-600">*</span>
+                            {{ content('depot.label_prenom', 'Prénom') }} <span class="text-danger">*</span>
                         </label>
                         <input type="text" id="first_name" name="first_name" required autocomplete="given-name"
                                value="{{ old('first_name') }}" class="{{ $inputClass }}">
@@ -64,7 +64,7 @@
 
                     <div>
                         <label for="last_name" class="{{ $labelClass }}">
-                            {{ content('depot.label_nom', 'Nom') }} <span class="text-red-600">*</span>
+                            {{ content('depot.label_nom', 'Nom') }} <span class="text-danger">*</span>
                         </label>
                         <input type="text" id="last_name" name="last_name" required autocomplete="family-name"
                                value="{{ old('last_name') }}" class="{{ $inputClass }}">
@@ -73,7 +73,7 @@
 
                     <div>
                         <label for="email" class="{{ $labelClass }}">
-                            {{ content('depot.label_email', 'Adresse e-mail') }} <span class="text-red-600">*</span>
+                            {{ content('depot.label_email', 'Adresse e-mail') }} <span class="text-danger">*</span>
                         </label>
                         <input type="email" id="email" name="email" required autocomplete="email" inputmode="email"
                                value="{{ old('email') }}" class="{{ $inputClass }}">
@@ -82,7 +82,7 @@
 
                     <div>
                         <label for="phone" class="{{ $labelClass }}">
-                            {{ content('depot.label_telephone', 'Téléphone') }} <span class="text-red-600">*</span>
+                            {{ content('depot.label_telephone', 'Téléphone') }} <span class="text-danger">*</span>
                         </label>
                         <input type="tel" id="phone" name="phone" required autocomplete="tel" inputmode="tel"
                                value="{{ old('phone') }}" class="{{ $inputClass }}">
@@ -92,7 +92,7 @@
 
                     <div>
                         <label for="country_of_residence" class="{{ $labelClass }}">
-                            {{ content('depot.label_pays', 'Pays de résidence') }} <span class="text-red-600">*</span>
+                            {{ content('depot.label_pays', 'Pays de résidence') }} <span class="text-danger">*</span>
                         </label>
                         <input type="text" id="country_of_residence" name="country_of_residence" required
                                autocomplete="country-name" value="{{ old('country_of_residence') }}" class="{{ $inputClass }}">
@@ -122,17 +122,17 @@
 
             {{-- Documents --}}
             <fieldset class="space-y-5">
-                <legend class="text-lg font-semibold text-brand-900">
+                <legend class="text-lg font-semibold text-ink-strong">
                     {{ content('depot.section_documents', 'Vos documents') }}
                 </legend>
 
-                <p class="rounded-md bg-slate-50 p-3 text-sm text-slate-600">
+                <p class="rounded-md bg-surface-muted p-3 text-sm text-ink-muted">
                     {{ content('depot.aide_documents') }}
                 </p>
 
                 <div>
                     <label for="cv" class="{{ $labelClass }}">
-                        {{ content('depot.label_cv', 'CV au format canadien') }} <span class="text-red-600">*</span>
+                        {{ content('depot.label_cv', 'CV au format canadien') }} <span class="text-danger">*</span>
                     </label>
                     <input type="file" id="cv" name="cv" required accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_cv') }}</p>
@@ -141,7 +141,7 @@
 
                 <div>
                     <label for="tcf_tef" class="{{ $labelClass }}">
-                        {{ content('depot.label_tcf_tef', 'Résultat TCF ou TEF') }} <span class="text-red-600">*</span>
+                        {{ content('depot.label_tcf_tef', 'Résultat TCF ou TEF') }} <span class="text-danger">*</span>
                     </label>
                     <input type="file" id="tcf_tef" name="tcf_tef" required accept="application/pdf,image/jpeg,image/png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_tcf_tef') }}</p>
@@ -176,19 +176,19 @@
                 </div>
             </fieldset>
 
-            <div class="border-t border-slate-200 pt-6">
+            <div class="border-t border-line pt-6">
                 <p data-alerte-televersement hidden role="alert"
-                   class="mb-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                   class="mb-5 rounded-md border border-notice-line bg-notice p-4 text-sm text-notice-ink">
                     Vos fichiers sont encore en cours d'envoi. Patientez jusqu'à la fin de l'envoi
                     avant de valider votre dossier.
                 </p>
 
-                <p class="text-xs leading-relaxed text-slate-500">{{ content('depot.mention_donnees') }}</p>
+                <p class="text-xs leading-relaxed text-ink-muted">{{ content('depot.mention_donnees') }}</p>
 
                 <button type="submit"
                         data-bouton-envoi
                         data-libelle-envoi="Envoi en cours…"
-                        class="mt-5 w-full rounded-md bg-brand-700 px-6 py-3 font-medium text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                        class="mt-5 w-full rounded-md bg-brand px-6 py-3 font-medium text-white transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                     {{ content('depot.bouton_envoyer', 'Envoyer mon dossier') }}
                 </button>
             </div>

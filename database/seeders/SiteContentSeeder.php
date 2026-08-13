@@ -8,20 +8,18 @@ use Illuminate\Database\Seeder;
 /**
  * Source de vérité initiale des textes du site public.
  *
- * Le seeder utilise updateOrCreate sur le couple (key, locale) : le relancer
- * ne doit jamais écraser une modification faite depuis le back-office. Les
- * blocs déjà présents sont donc laissés intacts.
+ * Chaque bloc devient une fiche éditable dans le back-office : ajouter une clé
+ * ici, c'est ajouter un champ dans l'interface d'administration. Relancer le
+ * seeder n'écrase jamais un texte modifié par la cliente, il complète seulement
+ * les clés absentes.
  *
- * Les textes rédactionnels sont volontairement des placeholders. Seuls les
- * libellés fonctionnels (boutons, champs, navigation) sont définitifs.
+ * Les textes rédactionnels sont des placeholders. Seuls les libellés
+ * fonctionnels (boutons, champs, navigation) sont définitifs.
  */
 class SiteContentSeeder extends Seeder
 {
     private const TODO = '[À COMPLÉTER PAR LA CLIENTE]';
 
-    /**
-     * Seed the editable contents of the public site.
-     */
     public function run(): void
     {
         foreach ($this->blocks() as $key => $block) {
@@ -52,15 +50,13 @@ class SiteContentSeeder extends Seeder
     }
 
     /**
-     * Get every block of the public site.
-     *
      * @return array<string, array{label: string, content: array<string, string>}>
      */
     private function blocks(): array
     {
         return [
             'global' => [
-                'label' => 'Général (nom du site, pied de page)',
+                'label' => 'Général — nom du site, navigation, pied de page',
                 'content' => [
                     'nom_site' => 'LN Immigration',
                     'baseline' => self::TODO,
@@ -72,6 +68,8 @@ class SiteContentSeeder extends Seeder
                     'nav_contact' => 'Contact',
                     'nav_deposer' => 'Déposer mon dossier',
                     'nav_suivre' => 'Suivre mon dossier',
+                    'footer_titre_navigation' => 'Le cabinet',
+                    'footer_titre_contact' => 'Nous joindre',
                     'footer_adresse' => self::TODO,
                     'footer_telephone' => self::TODO,
                     'footer_email' => self::TODO,
@@ -84,7 +82,7 @@ class SiteContentSeeder extends Seeder
             'accueil' => [
                 'label' => "Page d'accueil",
                 'content' => [
-                    'meta_titre' => 'LN Immigration — Accompagnement à l\'immigration au Canada',
+                    'meta_titre' => "LN Immigration — Accompagnement à l'immigration au Canada",
                     'meta_description' => self::TODO,
                     'hero_titre' => self::TODO,
                     'hero_sous_titre' => self::TODO,
@@ -92,15 +90,127 @@ class SiteContentSeeder extends Seeder
                     'hero_bouton_secondaire' => 'Suivre mon dossier',
                     'section_services_titre' => 'Nos services',
                     'section_services_intro' => self::TODO,
+                    'section_services_bouton' => 'Voir tous nos services',
                     'section_etapes_titre' => 'Comment ça se passe',
                     'etape_1_titre' => 'Vous déposez votre dossier',
                     'etape_1_texte' => self::TODO,
-                    'etape_2_titre' => 'Nous l\'étudions',
+                    'etape_2_titre' => "Nous l'étudions",
                     'etape_2_texte' => self::TODO,
                     'etape_3_titre' => 'Nous vous accompagnons',
                     'etape_3_texte' => self::TODO,
+                    'section_temoignages_titre' => 'Ils nous ont fait confiance',
+                    'section_temoignages_bouton' => 'Lire tous les témoignages',
                     'cta_titre' => self::TODO,
+                    'cta_texte' => self::TODO,
                     'cta_bouton' => 'Commencer maintenant',
+                ],
+            ],
+
+            'services' => [
+                'label' => 'Page « Services »',
+                'content' => [
+                    'meta_titre' => 'Nos services — LN Immigration',
+                    'meta_description' => self::TODO,
+                    'titre' => 'Nos services',
+                    'introduction' => self::TODO,
+                    'service_1_titre' => self::TODO,
+                    'service_1_texte' => self::TODO,
+                    'service_2_titre' => self::TODO,
+                    'service_2_texte' => self::TODO,
+                    'service_3_titre' => self::TODO,
+                    'service_3_texte' => self::TODO,
+                    'service_4_titre' => self::TODO,
+                    'service_4_texte' => self::TODO,
+                    'service_5_titre' => self::TODO,
+                    'service_5_texte' => self::TODO,
+                    'service_6_titre' => self::TODO,
+                    'service_6_texte' => self::TODO,
+                    'tarifs_titre' => 'Nos tarifs',
+                    'tarifs_texte' => self::TODO,
+                    'cta_titre' => self::TODO,
+                    'cta_bouton' => 'Déposer mon dossier',
+                ],
+            ],
+
+            'a_propos' => [
+                'label' => 'Page « À propos »',
+                'content' => [
+                    'meta_titre' => 'À propos — LN Immigration',
+                    'meta_description' => self::TODO,
+                    'titre' => 'À propos du cabinet',
+                    'introduction' => self::TODO,
+                    'histoire_titre' => 'Notre histoire',
+                    'histoire_texte' => self::TODO,
+                    'mission_titre' => 'Notre mission',
+                    'mission_texte' => self::TODO,
+                    'valeur_1_titre' => self::TODO,
+                    'valeur_1_texte' => self::TODO,
+                    'valeur_2_titre' => self::TODO,
+                    'valeur_2_texte' => self::TODO,
+                    'valeur_3_titre' => self::TODO,
+                    'valeur_3_texte' => self::TODO,
+                    'equipe_titre' => "L'équipe",
+                    'equipe_texte' => self::TODO,
+                    'cta_titre' => self::TODO,
+                    'cta_bouton' => 'Déposer mon dossier',
+                ],
+            ],
+
+            'temoignages' => [
+                'label' => 'Page « Témoignages »',
+                'content' => [
+                    'meta_titre' => 'Témoignages — LN Immigration',
+                    'meta_description' => self::TODO,
+                    'titre' => 'Ils nous ont fait confiance',
+                    'introduction' => self::TODO,
+                    'aucun' => 'Les premiers témoignages seront publiés prochainement.',
+                    'cta_titre' => self::TODO,
+                    'cta_bouton' => 'Déposer mon dossier',
+                ],
+            ],
+
+            'faq' => [
+                'label' => 'Page « FAQ »',
+                'content' => [
+                    'meta_titre' => 'Questions fréquentes — LN Immigration',
+                    'meta_description' => self::TODO,
+                    'titre' => 'Questions fréquentes',
+                    'introduction' => self::TODO,
+                    'question_1' => self::TODO,
+                    'reponse_1' => self::TODO,
+                    'question_2' => self::TODO,
+                    'reponse_2' => self::TODO,
+                    'question_3' => self::TODO,
+                    'reponse_3' => self::TODO,
+                    'question_4' => self::TODO,
+                    'reponse_4' => self::TODO,
+                    'question_5' => self::TODO,
+                    'reponse_5' => self::TODO,
+                    'question_6' => self::TODO,
+                    'reponse_6' => self::TODO,
+                    'cta_titre' => 'Vous ne trouvez pas votre réponse ?',
+                    'cta_bouton' => 'Nous contacter',
+                ],
+            ],
+
+            'contact' => [
+                'label' => 'Page « Contact »',
+                'content' => [
+                    'meta_titre' => 'Nous contacter — LN Immigration',
+                    'meta_description' => self::TODO,
+                    'titre' => 'Nous contacter',
+                    'introduction' => self::TODO,
+                    'adresse_titre' => 'Adresse',
+                    'adresse_texte' => self::TODO,
+                    'telephone_titre' => 'Téléphone',
+                    'telephone_texte' => self::TODO,
+                    'email_titre' => 'Adresse e-mail',
+                    'email_texte' => self::TODO,
+                    'horaires_titre' => "Horaires d'ouverture",
+                    'horaires_texte' => self::TODO,
+                    'depot_titre' => 'Vous souhaitez nous confier votre dossier ?',
+                    'depot_texte' => self::TODO,
+                    'depot_bouton' => 'Déposer mon dossier',
                 ],
             ],
 
@@ -148,7 +258,7 @@ class SiteContentSeeder extends Seeder
                     'label_reference' => 'Votre référence de suivi',
                     'suite' => self::TODO,
                     'bouton_suivi' => 'Suivre mon dossier',
-                    'bouton_accueil' => 'Retour à l\'accueil',
+                    'bouton_accueil' => "Retour à l'accueil",
                 ],
             ],
 
@@ -158,7 +268,7 @@ class SiteContentSeeder extends Seeder
                     'meta_titre' => 'Suivre mon dossier — LN Immigration',
                     'meta_description' => self::TODO,
                     'titre' => 'Suivre mon dossier',
-                    'introduction' => 'Saisissez la référence reçue lors du dépôt ainsi que l\'adresse e-mail utilisée.',
+                    'introduction' => "Saisissez la référence reçue lors du dépôt ainsi que l'adresse e-mail utilisée.",
                     'label_reference' => 'Référence du dossier',
                     'aide_reference' => 'Par exemple : LN-2026-00147',
                     'label_email' => 'Adresse e-mail',
@@ -168,6 +278,43 @@ class SiteContentSeeder extends Seeder
                     'resultat_maj' => 'Dernière mise à jour',
                     'introuvable' => 'Aucun dossier ne correspond à cette référence et à cette adresse e-mail.',
                     'aide_contact' => self::TODO,
+                ],
+            ],
+
+            'mentions_legales' => [
+                'label' => 'Page « Mentions légales »',
+                'content' => [
+                    'meta_titre' => 'Mentions légales — LN Immigration',
+                    'titre' => 'Mentions légales',
+                    'editeur_titre' => 'Éditeur du site',
+                    'editeur_html' => self::TODO,
+                    'hebergeur_titre' => 'Hébergeur',
+                    'hebergeur_html' => self::TODO,
+                    'propriete_titre' => 'Propriété intellectuelle',
+                    'propriete_html' => self::TODO,
+                    'responsabilite_titre' => 'Limitation de responsabilité',
+                    'responsabilite_html' => self::TODO,
+                ],
+            ],
+
+            'confidentialite' => [
+                'label' => 'Page « Politique de confidentialité »',
+                'content' => [
+                    'meta_titre' => 'Politique de confidentialité — LN Immigration',
+                    'titre' => 'Politique de confidentialité',
+                    'introduction_html' => self::TODO,
+                    'donnees_titre' => 'Données collectées',
+                    'donnees_html' => self::TODO,
+                    'finalite_titre' => 'Pourquoi nous les collectons',
+                    'finalite_html' => self::TODO,
+                    'conservation_titre' => 'Durée de conservation',
+                    'conservation_html' => self::TODO,
+                    'securite_titre' => 'Sécurité de vos documents',
+                    'securite_html' => self::TODO,
+                    'droits_titre' => 'Vos droits',
+                    'droits_html' => self::TODO,
+                    'contact_titre' => 'Nous écrire',
+                    'contact_html' => self::TODO,
                 ],
             ],
         ];

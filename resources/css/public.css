@@ -2,8 +2,13 @@
  | Feuille de style du site public.
  |
  | Volontairement séparée de app.css : les pages publiques sont consultées
- | majoritairement depuis un téléphone Android en 3G. Elles ne chargent donc
- | ni Flux, ni Livewire, ni Alpine — uniquement Tailwind.
+ | majoritairement depuis un téléphone Android en 3G. Elles ne chargent ni Flux,
+ | ni Livewire — uniquement Tailwind.
+ |
+ | Les couleurs passent par des jetons sémantiques (surface, ink, line, brand…).
+ | Chaque page utilise ces jetons plutôt que des couleurs en dur : le thème
+ | sombre se règle alors en un seul endroit, et toutes les pages restent
+ | cohérentes entre elles.
  */
 
 @import 'tailwindcss';
@@ -11,24 +16,130 @@
 @source '../views/public';
 @source '../views/components/public-layout.blade.php';
 
+/* Même convention que le back-office : la classe .dark sur <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
 
-    --color-brand-50: #eff6ff;
-    --color-brand-100: #dbeafe;
-    --color-brand-200: #bfdbfe;
-    --color-brand-600: #1d4ed8;
-    --color-brand-700: #1e40af;
-    --color-brand-800: #1e3a8a;
-    --color-brand-900: #172554;
+    /* Thème clair */
+    --color-surface: #ffffff;
+    --color-surface-muted: #f8fafc;
+    --color-surface-raised: #ffffff;
+    --color-line: #e2e8f0;
+    --color-ink: #1e293b;
+    --color-ink-strong: #0f172a;
+    --color-ink-muted: #64748b;
+
+    --color-brand: #1d4ed8;
+    --color-brand-hover: #1e40af;
+    --color-brand-text: #1e40af;
+    --color-brand-soft: #eff6ff;
+    --color-brand-line: #bfdbfe;
+
+    --color-notice: #fffbeb;
+    --color-notice-line: #fde68a;
+    --color-notice-ink: #78350f;
+
+    --color-danger: #dc2626;
+    --color-danger-soft: #fef2f2;
+    --color-danger-line: #fecaca;
+    --color-danger-ink: #991b1b;
+
+    --color-ok: #16a34a;
+    --color-ok-soft: #f0fdf4;
+    --color-ok-line: #bbf7d0;
+    --color-ok-ink: #14532d;
 }
 
-/* Cible tactile confortable sur mobile. */
+@layer theme {
+    .dark {
+        --color-surface: #0f172a;
+        --color-surface-muted: #172033;
+        --color-surface-raised: #1e293b;
+        --color-line: #334155;
+        --color-ink: #e2e8f0;
+        --color-ink-strong: #f8fafc;
+        --color-ink-muted: #94a3b8;
+
+        --color-brand: #2563eb;
+        --color-brand-hover: #3b82f6;
+        --color-brand-text: #93c5fd;
+        --color-brand-soft: #172554;
+        --color-brand-line: #1e40af;
+
+        --color-notice: #292014;
+        --color-notice-line: #78350f;
+        --color-notice-ink: #fcd34d;
+
+        --color-danger: #ef4444;
+        --color-danger-soft: #2a1515;
+        --color-danger-line: #7f1d1d;
+        --color-danger-ink: #fca5a5;
+
+        --color-ok: #22c55e;
+        --color-ok-soft: #0f2419;
+        --color-ok-line: #14532d;
+        --color-ok-ink: #86efac;
+    }
+}
+
 @layer base {
+    /* Cible tactile confortable et héritage de police sur mobile. */
     input,
     select,
     textarea,
     button {
         font: inherit;
+    }
+
+    /* Le thème est appliqué avant le premier rendu : pas de clignotement. */
+    html {
+        color-scheme: light;
+    }
+
+    html.dark {
+        color-scheme: dark;
+    }
+}
+
+/*
+ | Mise en forme des textes saisis dans l'éditeur riche du back-office.
+ | Tailwind ne stylise pas le HTML injecté : ces règles s'en chargent.
+ */
+@layer components {
+    .prose-simple :is(p, ul, ol) {
+        margin-block: 0.75rem;
+    }
+
+    .prose-simple :is(h2, h3) {
+        color: var(--color-ink-strong);
+        font-weight: 600;
+        margin-block: 1.25rem 0.5rem;
+    }
+
+    .prose-simple ul {
+        list-style: disc;
+        padding-inline-start: 1.25rem;
+    }
+
+    .prose-simple ol {
+        list-style: decimal;
+        padding-inline-start: 1.25rem;
+    }
+
+    .prose-simple li {
+        margin-block: 0.25rem;
+    }
+
+    .prose-simple a {
+        color: var(--color-brand-text);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .prose-simple strong {
+        color: var(--color-ink-strong);
+        font-weight: 600;
     }
 }
