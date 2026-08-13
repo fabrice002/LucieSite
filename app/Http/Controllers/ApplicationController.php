@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\SubmitApplication;
 use App\Http\Requests\StoreApplicationRequest;
+use App\Support\TemporaryUploadStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Session;
 use Illuminate\View\View;
@@ -21,13 +22,20 @@ class ApplicationController extends Controller
     /**
      * Persist a new application and redirect to the confirmation page.
      */
-    public function store(StoreApplicationRequest $request, SubmitApplication $submit): RedirectResponse
-    {
+    public function store(
+        StoreApplicationRequest $request,
+        SubmitApplication $submit,
+        TemporaryUploadStorage $uploads,
+    ): RedirectResponse {
         $application = $submit(
             $request->candidateAttributes(),
             $request->documents(),
             $request->ip(),
         );
+
+        foreach ($request->consumedTokens() as $token) {
+            $uploads->forget($token);
+        }
 
         // La référence transite par la session : elle n'apparaît pas dans l'URL.
         Session::flash('reference', $application->reference);

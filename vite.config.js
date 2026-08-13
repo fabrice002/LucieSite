@@ -12,6 +12,7 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/public.css',
                 'resources/js/app.js',
+                'resources/js/depot.js',
             ],
             refresh: true,
             fonts: [

@@ -35,6 +35,8 @@
         <form method="POST"
               action="{{ route('depot.store') }}"
               enctype="multipart/form-data"
+              data-depot-form
+              data-televersement-url="{{ url('televersement') }}"
               class="mt-10 space-y-10">
             @csrf
 
@@ -132,7 +134,7 @@
                     <label for="cv" class="{{ $labelClass }}">
                         {{ content('depot.label_cv', 'CV au format canadien') }} <span class="text-red-600">*</span>
                     </label>
-                    <input type="file" id="cv" name="cv" required accept=".pdf,.jpg,.jpeg,.png" class="{{ $fileClass }}">
+                    <input type="file" id="cv" name="cv" required accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_cv') }}</p>
                     @error('cv')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -141,7 +143,7 @@
                     <label for="tcf_tef" class="{{ $labelClass }}">
                         {{ content('depot.label_tcf_tef', 'Résultat TCF ou TEF') }} <span class="text-red-600">*</span>
                     </label>
-                    <input type="file" id="tcf_tef" name="tcf_tef" required accept=".pdf,.jpg,.jpeg,.png" class="{{ $fileClass }}">
+                    <input type="file" id="tcf_tef" name="tcf_tef" required accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_tcf_tef') }}</p>
                     @error('tcf_tef')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -150,7 +152,7 @@
                     <label for="passeport" class="{{ $labelClass }}">
                         {{ content('depot.label_passeport', 'Passeport') }}
                     </label>
-                    <input type="file" id="passeport" name="passeport" accept=".pdf,.jpg,.jpeg,.png" class="{{ $fileClass }}">
+                    <input type="file" id="passeport" name="passeport" accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_passeport') }}</p>
                     @error('passeport')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -159,7 +161,7 @@
                     <label for="diplomes" class="{{ $labelClass }}">
                         {{ content('depot.label_diplomes', 'Diplômes') }}
                     </label>
-                    <input type="file" id="diplomes" name="diplomes[]" multiple accept=".pdf,.jpg,.jpeg,.png" class="{{ $fileClass }}">
+                    <input type="file" id="diplomes" name="diplomes[]" multiple accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_diplomes') }}</p>
                     @error('diplomes.*')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
@@ -168,20 +170,32 @@
                     <label for="autres" class="{{ $labelClass }}">
                         {{ content('depot.label_autres', 'Autres documents') }}
                     </label>
-                    <input type="file" id="autres" name="autres[]" multiple accept=".pdf,.jpg,.jpeg,.png" class="{{ $fileClass }}">
+                    <input type="file" id="autres" name="autres[]" multiple accept=".pdf,.jpg,.jpeg,.png" data-filepond class="{{ $fileClass }}">
                     <p class="{{ $helpClass }}">{{ content('depot.aide_autres') }}</p>
                     @error('autres.*')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
                 </div>
             </fieldset>
 
             <div class="border-t border-slate-200 pt-6">
+                <p data-alerte-televersement hidden role="alert"
+                   class="mb-5 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                    Vos fichiers sont encore en cours d'envoi. Patientez jusqu'à la fin de l'envoi
+                    avant de valider votre dossier.
+                </p>
+
                 <p class="text-xs leading-relaxed text-slate-500">{{ content('depot.mention_donnees') }}</p>
 
                 <button type="submit"
-                        class="mt-5 w-full rounded-md bg-brand-700 px-6 py-3 font-medium text-white transition hover:bg-brand-800 sm:w-auto">
+                        data-bouton-envoi
+                        data-libelle-envoi="Envoi en cours…"
+                        class="mt-5 w-full rounded-md bg-brand-700 px-6 py-3 font-medium text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                     {{ content('depot.bouton_envoyer', 'Envoyer mon dossier') }}
                 </button>
             </div>
         </form>
     </div>
+
+    @push('scripts')
+        @vite('resources/js/depot.js')
+    @endpush
 </x-public-layout>

@@ -3,17 +3,118 @@
 namespace App\Http\Requests;
 
 use App\Enums\DocumentType;
+use App\Support\TemporaryUploadStorage;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\Validator;
 
 class StoreApplicationRequest extends FormRequest
 {
+    /**
+     * Jetons FilePond effectivement transformés en fichiers.
+     *
+     * @var list<string>
+     */
+    private array $consumedTokens = [];
+
+    /**
+     * Champs dont le jeton FilePond n'a pas pu être résolu.
+     *
+     * @var list<string>
+     */
+    private array $expiredFields = [];
+
     /**
      * Le dépôt est public : aucun compte candidat n'existe.
      */
     public function authorize(): bool
     {
         return true;
+    }
+
+    /**
+     * Résout les jetons FilePond en fichiers avant toute validation.
+     *
+     * Le formulaire fonctionne de deux manières : sans JavaScript, le navigateur
+     * envoie les fichiers directement ; avec FilePond, il envoie des jetons qui
+     * désignent des fichiers déjà téléversés par tranches. En les convertissant
+     * ici, les deux parcours empruntent ensuite exactement les mêmes règles de
+     * validation — dont mimes, qui inspecte le contenu réel.
+     */
+    protected function prepareForValidation(): void
+    {
+        $storage = app(TemporaryUploadStorage::class);
+
+        foreach (['cv', 'tcf_tef', 'passeport'] as $field) {
+            $token = $this->input($field);
+
+            if (! is_string($token) || $token === '') {
+                continue;
+            }
+
+            $this->request->remove($field);
+
+            if ($file = $storage->toUploadedFile($token)) {
+                $this->files->set($field, $file);
+                $this->consumedTokens[] = $token;
+            } else {
+                $this->expiredFields[] = $field;
+            }
+        }
+
+        foreach (['diplomes', 'autres'] as $field) {
+            $tokens = $this->input($field);
+
+            if (! is_array($tokens)) {
+                continue;
+            }
+
+            $this->request->remove($field);
+            $files = [];
+
+            foreach ($tokens as $token) {
+                if (! is_string($token) || $token === '') {
+                    continue;
+                }
+
+                if ($file = $storage->toUploadedFile($token)) {
+                    $files[] = $file;
+                    $this->consumedTokens[] = $token;
+                } else {
+                    $this->expiredFields[] = $field;
+                }
+            }
+
+            if ($files !== []) {
+                $this->files->set($field, $files);
+            }
+        }
+    }
+
+    /**
+     * Signale explicitement un téléversement expiré plutôt que de laisser
+     * croire au candidat qu'il a oublié de joindre un fichier.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            foreach (array_unique($this->expiredFields) as $field) {
+                $validator->errors()->add(
+                    $field,
+                    'Ce téléversement a expiré. Merci de sélectionner à nouveau le fichier.',
+                );
+            }
+        });
+    }
+
+    /**
+     * Get the FilePond tokens that were turned into files.
+     *
+     * @return list<string>
+     */
+    public function consumedTokens(): array
+    {
+        return array_values(array_unique($this->consumedTokens));
     }
 
     /**

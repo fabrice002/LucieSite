@@ -8,6 +8,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? content('global.nom_site', 'LN Immigration') }}</title>
     <meta name="description" content="{{ $description }}">
@@ -91,6 +92,10 @@
             {{ content('global.footer_copyright', 'Tous droits réservés.') }}
         </div>
     </footer>
+
+    {{-- Chaque page ne charge que le JavaScript dont elle a besoin : l'accueil
+         et le suivi n'en chargent aucun. --}}
+    @stack('scripts')
 
 </body>
 </html>
