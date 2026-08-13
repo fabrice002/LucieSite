@@ -46,7 +46,11 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/').'/storage',
+            // URL relative volontairement : construite depuis APP_URL, elle
+            // casserait dès que le site est consulté sur un autre hôte ou un
+            // autre port que celui configuré (adresse Laragon, IP locale pour
+            // tester depuis un téléphone, préproduction…).
+            'url' => '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

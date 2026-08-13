@@ -13,6 +13,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
+use RuntimeException;
 
 /**
  * Choix d'un nouveau mot de passe.
@@ -41,7 +42,22 @@ class ChangerMotDePasse extends Page
 
     public function mount(): void
     {
-        $this->form->fill();
+        $this->formulaire()->fill();
+    }
+
+    /**
+     * Le schéma du formulaire, résolu explicitement.
+     *
+     * Filament expose aussi « $this->form » par propriété magique, mais
+     * l'analyse statique ne sait pas la résoudre.
+     */
+    private function formulaire(): Schema
+    {
+        $schema = $this->getSchema('form');
+
+        throw_if($schema === null, new RuntimeException('Formulaire introuvable.'));
+
+        return $schema;
     }
 
     public function getSubheading(): string
@@ -75,7 +91,7 @@ class ChangerMotDePasse extends Page
 
     public function enregistrer(): void
     {
-        $donnees = $this->form->getState();
+        $donnees = $this->formulaire()->getState();
 
         $utilisateur = $this->utilisateur();
         $utilisateur->forceFill([
@@ -83,7 +99,7 @@ class ChangerMotDePasse extends Page
             'must_change_password' => false,
         ])->save();
 
-        $this->form->fill();
+        $this->formulaire()->fill();
 
         Notification::make()
             ->success()

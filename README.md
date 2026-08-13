@@ -53,9 +53,15 @@ Créez la base de données, renseignez les identifiants dans `.env`, puis :
 
 ```bash
 php artisan migrate --seed
+php artisan storage:link
 npm run build
 php artisan serve
 ```
+
+> `storage:link` crée le lien `public/storage`. Sans lui, **les photos des
+> témoignages ne s'affichent pas** : elles sont bien téléversées, mais rien ne
+> les sert. C'est le seul disque exposé publiquement ; les documents des
+> candidats, eux, restent sur le disque privé.
 
 Le seeder crée les rôles `admin` et `agent`, les blocs de textes du site, et un
 compte de test : **test@example.com / password**.
@@ -66,9 +72,54 @@ L'inscription publique est **volontairement fermée** : aucun candidat ne possè
 de compte. Les comptes se créent en console :
 
 ```bash
+# Interactif : le mot de passe est demandé sans être affiché
 php artisan ln:create-user
-php artisan ln:create-user --name="Lucie N." --email=lucie@exemple.cm --role=admin
+
+# Scripté : mot de passe généré et affiché une fois
+php artisan ln:create-user --name="Lucie N." --email=lucie@exemple.cm --role=admin --generate
 ```
+
+Le compte peut aussi être créé depuis **Comptes et rôles** dans le back-office.
+
+Dans les deux cas :
+
+- un **e-mail de bienvenue** part en file d'attente — le worker doit tourner,
+  sinon rien n'est envoyé ;
+- le mot de passe est **provisoire** : à la première connexion, son titulaire est
+  redirigé vers un écran de changement et ne peut rien faire d'autre avant
+  d'en avoir choisi un nouveau ;
+- le mot de passe n'est **jamais** transmis par e-mail. Il se communique de vive
+  voix ou par un canal sûr.
+
+> ⚠️ Les notifications sont mises en file d'attente. En développement, lancez
+> `php artisan queue:work` dans un second terminal, sinon **aucun e-mail ne
+> part** — ni la bienvenue, ni les accusés de réception de dossier.
+
+### Vérifier la configuration e-mail
+
+```bash
+php artisan ln:test-mail votre.adresse@exemple.com
+```
+
+Cette commande envoie **immédiatement, sans passer par la file**. Elle sépare
+donc les deux causes possibles d'un e-mail qui n'arrive pas :
+
+- **elle réussit** → la configuration SMTP est bonne ; si les e-mails du site
+  n'arrivent toujours pas, c'est le worker qui ne tourne pas ;
+- **elle échoue** → elle affiche l'erreur du serveur SMTP et ce qu'il faut
+  corriger.
+
+Elle affiche aussi la configuration réellement utilisée et signale les deux
+pièges classiques : `MAIL_MAILER=log` (rien ne part) et le sandbox Mailtrap
+(qui ne délivre jamais vers une vraie boîte).
+
+**Gmail** exige un *mot de passe d'application* — le mot de passe du compte est
+refusé avec `534-5.7.9 Application-specific password required`. Il se génère sur
+[myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords),
+après activation de la validation en deux étapes.
+
+Après toute modification de `.env` : `php artisan config:clear`, **et redémarrez
+le worker** — il garde l'ancienne configuration en mémoire.
 
 ---
 
@@ -106,6 +157,50 @@ Tout est réuni sous **`/admin`**. Il n'existe pas d'autre espace authentifié :
   la gestion des comptes.
 - `agent` — consultation des dossiers, changement de statut, notes internes.
   Ni suppression, ni textes du site, ni gestion des comptes.
+
+### Changer le logo
+
+Tout se règle dans **`config/brand.php`**, un seul endroit. Le logo apparaît
+alors partout : en-tête et pied du site public, page de connexion, back-office,
+et icône de l'onglet du navigateur.
+
+**Avec le logo définitif de la cliente :**
+
+1. Déposer le fichier dans `public/images/`, par exemple `public/images/logo.svg`
+2. Renseigner le chemin :
+
+```php
+// config/brand.php
+'logo' => 'images/logo.svg',
+```
+
+ou, sans toucher au code, dans `.env` :
+
+```dotenv
+BRAND_LOGO=images/logo.svg
+```
+
+3. Régénérer l'icône d'onglet :
+
+```bash
+php artisan ln:generate-icons
+```
+
+**Sans logo définitif**, un monogramme « LN » est utilisé. Il est tracé depuis
+`config/brand.php` et suit le thème clair ou sombre, ce qu'un fichier image ne
+sait pas faire. Ses couleurs se règlent au même endroit :
+
+```php
+'icone_fond' => '#1e40af',
+'icone_trait' => '#ffffff',
+```
+
+La commande `ln:generate-icons` produit `favicon.svg`, `favicon.ico` et
+`apple-touch-icon.png` à partir de ces mêmes valeurs — la marque reste donc
+identique dans les pages et dans l'onglet.
+
+> Pensez à vider le cache du navigateur : les favicons sont conservés très
+> longtemps, et l'ancienne icône peut sembler persister.
 
 ### Textes du site
 

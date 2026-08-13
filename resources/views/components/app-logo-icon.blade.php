@@ -1,9 +1,27 @@
 {{--
-    Monogramme « LN » — marque provisoire.
-    [À REMPLACER PAR LE LOGO DÉFINITIF DE LA CLIENTE]
-    Le tracé utilise currentColor : il s'adapte au thème clair comme sombre.
+    Marque du site — source unique.
+
+    Le logo se change dans config/brand.php (clé « logo »), et se répercute
+    partout : site public, page de connexion, back-office et onglet du
+    navigateur. Voir la section « Changer le logo » du README.
 --}}
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-hidden="true" {{ $attributes }}>
-    <path fill="currentColor" d="M6 9h4.6v17.4h8.2V31H6z" />
-    <path fill="currentColor" d="M21.4 9h4.4l7.6 12.6V9H38v22h-4.4l-7.6-12.6V31h-4.6z" />
-</svg>
+@php
+    $logo = config('brand.logo');
+    $attributs = $attributes ?? new Illuminate\View\ComponentAttributeBag;
+@endphp
+
+@if (filled($logo))
+    <img src="{{ asset($logo) }}"
+         alt="{{ config('app.name', 'LN Immigration') }}"
+         {{ $attributs->merge(['class' => 'object-contain']) }}>
+@else
+    {{-- Monogramme de repli, tracé depuis config/brand.php.
+         Il utilise currentColor : il suit donc le thème clair ou sombre. --}}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"
+         role="img" aria-label="{{ config('app.name', 'LN Immigration') }}" {{ $attributs }}>
+        @foreach (config('brand.monogramme', []) as $lettre)
+            <polygon fill="currentColor"
+                     points="{{ collect($lettre)->map(fn (array $point): string => implode(',', $point))->implode(' ') }}" />
+        @endforeach
+    </svg>
+@endif

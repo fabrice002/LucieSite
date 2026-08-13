@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Notifications\StaffAccountCreated;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
@@ -25,7 +26,9 @@ class CreateStaffUser extends Command
     protected $signature = 'ln:create-user
                             {--name= : Nom affiché}
                             {--email= : Adresse e-mail}
-                            {--role=admin : Rôle attribué (admin ou agent)}';
+                            {--role=admin : Rôle attribué (admin ou agent)}
+                            {--password= : Mot de passe provisoire, sinon demandé ou généré}
+                            {--generate : Génère un mot de passe provisoire et l\'affiche}';
 
     protected $description = 'Crée un compte administrateur ou agent pour le back-office';
 
@@ -47,7 +50,18 @@ class CreateStaffUser extends Command
             return self::FAILURE;
         }
 
-        $plain = password('Mot de passe', required: true);
+        // En déploiement scripté il n'y a pas de terminal interactif : le mot de
+        // passe se fournit alors en option, ou se génère.
+        $genere = false;
+
+        if (is_string($this->option('password')) && $this->option('password') !== '') {
+            $plain = (string) $this->option('password');
+        } elseif ($this->option('generate')) {
+            $plain = Str::password(16);
+            $genere = true;
+        } else {
+            $plain = password('Mot de passe', required: true);
+        }
 
         try {
             validator(
@@ -83,6 +97,14 @@ class CreateStaffUser extends Command
         $user->notify(new StaffAccountCreated($user, $role));
 
         $this->info("Compte {$role} créé pour {$email}.");
+
+        if ($genere) {
+            $this->newLine();
+            $this->line('  Mot de passe provisoire : <fg=yellow;options=bold>'.$plain.'</>');
+            $this->line('  À communiquer de vive voix ou par un canal sûr, jamais par e-mail.');
+            $this->newLine();
+        }
+
         $this->line('Connexion sur '.url('/admin'));
         $this->line('Un e-mail de bienvenue part en file d\'attente : le worker doit tourner.');
         $this->comment('Le mot de passe est provisoire, il sera demandé de le changer à la première connexion.');

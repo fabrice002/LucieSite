@@ -26,13 +26,14 @@ class EnsurePasswordHasBeenChanged
         }
 
         $destination = ChangerMotDePasse::getUrl();
+        $chemin = parse_url($destination, PHP_URL_PATH);
 
         // On laisse passer la page de changement elle-même, sinon la
         // redirection tournerait en boucle. Et la déconnexion, pour ne
         // jamais enfermer quelqu'un dans le panel.
-        if ($request->is(ltrim(parse_url($destination, PHP_URL_PATH) ?? '', '/'))
+        if ((is_string($chemin) && $request->is(ltrim($chemin, '/')))
             || $request->routeIs('filament.admin.auth.logout')
-            || $request->isMethod('POST') && $request->routeIs('*logout')) {
+            || $request->routeIs('*logout')) {
             return $next($request);
         }
 

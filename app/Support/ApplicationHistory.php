@@ -5,7 +5,7 @@ namespace App\Support;
 use App\Enums\ApplicationStatus;
 use App\Models\Application;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Spatie\Activitylog\Models\Activity;
 
 /**
@@ -17,7 +17,7 @@ use Spatie\Activitylog\Models\Activity;
 class ApplicationHistory
 {
     /**
-     * @return list<array{date: Carbon, auteur: string, action: string, detail: string|null}>
+     * @return list<array{date: CarbonInterface, auteur: string, action: string, detail: string|null}>
      */
     public function __invoke(Application $application): array
     {

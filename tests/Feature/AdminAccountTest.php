@@ -75,6 +75,10 @@ it('affiche la page de sécurité', function () {
 });
 
 it('active, confirme puis désactive la double authentification', function () {
+    // Un code TOTP ne vaut que 30 secondes. Sans horloge figée, le test échoue
+    // au hasard lorsque la fenêtre bascule entre le calcul et la vérification.
+    $this->freezeTime();
+
     $user = membre('admin');
     $this->actingAs($user);
 

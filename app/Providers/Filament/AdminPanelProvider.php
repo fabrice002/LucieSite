@@ -19,6 +19,7 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Illuminate\View\View;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -33,6 +34,10 @@ class AdminPanelProvider extends PanelProvider
             // limitation de tentatives. Un second écran de connexion ferait
             // doublon et affaiblirait l'ensemble.
             ->brandName(config('app.name', 'LN Immigration'))
+            // Même marque que le site public : le logo vient du composant
+            // x-app-logo-icon, qui lit config/brand.php.
+            ->brandLogo(fn (): View => view('filament.brand'))
+            ->favicon(asset('favicon.svg'))
             // Page de profil native, rendue dans la mise en page du panel :
             // le nom, l'adresse e-mail et le mot de passe se modifient ici,
             // et la 2FA sur la page Sécurité juste à côté.

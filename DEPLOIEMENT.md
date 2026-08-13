@@ -176,6 +176,11 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
 
 - [ ] `php artisan schedule:list` affiche les quatre tâches
 - [ ] Le worker tourne (`supervisorctl status`)
+- [ ] **Le SMTP sortant passe** : `php artisan ln:test-mail votre.adresse@exemple.com`
+      Cette commande envoie sans passer par la file. Un échec « unreachable
+      network » ou « connection could not be established » signale un port
+      bloqué (25, 465, 587), pas un problème d'identifiants. Vérifier avec
+      `Test-NetConnection smtp.exemple.com -Port 587` ou `nc -zv`.
 - [ ] Dépôt de bout en bout : le candidat **et** l'administratrice reçoivent leur e-mail
 - [ ] Le suivi par référence + e-mail affiche le statut
 - [ ] Une mauvaise adresse e-mail ne révèle rien
