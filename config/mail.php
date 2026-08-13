@@ -115,4 +115,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Adresse de l'administratrice
+    |--------------------------------------------------------------------------
+    |
+    | Adresse qui reçoit une alerte à chaque dossier déposé. Si elle est vide,
+    | seule la notification au candidat est envoyée.
+    |
+    */
+
+    'admin_address' => env('MAIL_ADMIN_ADDRESS'),
+
 ];

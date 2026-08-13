@@ -1,0 +1,34 @@
+/*
+ | Feuille de style du site public.
+ |
+ | Volontairement séparée de app.css : les pages publiques sont consultées
+ | majoritairement depuis un téléphone Android en 3G. Elles ne chargent donc
+ | ni Flux, ni Livewire, ni Alpine — uniquement Tailwind.
+ */
+
+@import 'tailwindcss';
+
+@source '../views/public';
+@source '../views/components/public-layout.blade.php';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    --color-brand-50: #eff6ff;
+    --color-brand-100: #dbeafe;
+    --color-brand-200: #bfdbfe;
+    --color-brand-600: #1d4ed8;
+    --color-brand-700: #1e40af;
+    --color-brand-800: #1e3a8a;
+    --color-brand-900: #172554;
+}
+
+/* Cible tactile confortable sur mobile. */
+@layer base {
+    input,
+    select,
+    textarea,
+    button {
+        font: inherit;
+    }
+}

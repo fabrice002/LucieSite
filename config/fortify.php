@@ -144,7 +144,10 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // L'inscription publique est volontairement désactivée : seuls les
+        // administrateurs et les agents possèdent un compte, créé depuis le
+        // back-office ou en console. Aucun candidat ne s'inscrit sur le site.
+        // Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

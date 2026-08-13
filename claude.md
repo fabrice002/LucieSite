@@ -349,6 +349,7 @@ résume ce que tu as fait et attends ma validation avant de continuer.**
 - N'écris pas de texte en dur dans une vue publique
 - Ne crée pas de système de comptes pour les candidats
 - N'écris pas un back-office à la main : tout passe par Filament
+- Faire un Readme.MD detaillant le projet
 - Ne stocke aucun document de candidat sur le disque `public`
 - N'ajoute pas de dépendance hors de la liste de la section 2 sans me consulter
 - Ne génère pas de contenu textuel définitif pour les pages vitrines : mets des
