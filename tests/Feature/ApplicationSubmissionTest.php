@@ -51,6 +51,8 @@ function validPayload(array $overrides = []): array
         'country_of_residence' => 'Cameroun',
         'target_program' => 'Entrée Express',
         'message' => 'Bonjour, je souhaite immigrer au Canada.',
+        // Le consentement est obligatoire et vérifié côté serveur.
+        'consentement' => '1',
         'cv' => pdf('mon-cv.pdf'),
         'tcf_tef' => pdf('resultat-tcf.pdf'),
     ], $overrides);

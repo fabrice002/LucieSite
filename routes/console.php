@@ -29,3 +29,8 @@ Schedule::command('ln:purge-applications')->dailyAt('03:30');
 // anciennes archives selon la politique de rétention de config/backup.php.
 Schedule::command('backup:clean')->dailyAt('01:00');
 Schedule::command('backup:run')->dailyAt('01:30');
+
+// Contrôle de santé des sauvegardes. Une sauvegarde qui échoue alerte déjà ;
+// une sauvegarde qui ne se lance plus, elle, ne dit rien. C'est ce silence
+// que ce contrôle matinal rompt.
+Schedule::command('backup:monitor')->dailyAt('08:00');

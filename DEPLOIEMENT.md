@@ -216,10 +216,18 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
 - [ ] `BACKUP_DISKS` désigne un **stockage distant**
 - [ ] `mysqldump` est accessible — sinon renseigner `DB_DUMP_BINARY_PATH`,
       faute de quoi la base n'est pas sauvegardée
+- [ ] **`BACKUP_ARCHIVE_PASSWORD` est renseigné.** Sans lui, `laravel-backup`
+      produit une archive parfaitement valide et **parfaitement lisible**, sans
+      le moindre avertissement : les scans de passeports partiraient en clair
+      sur un stockage qui n'est pas sous votre contrôle
+- [ ] Ce mot de passe est conservé **hors du serveur** (gestionnaire de mots de
+      passe). Perdu, les sauvegardes deviennent définitivement illisibles
 - [ ] `php artisan backup:run` réussit
 - [ ] `php artisan backup:list` montre l'archive sur le disque distant
-- [ ] **Une restauration a été testée** — une sauvegarde jamais restaurée n'est
-      pas une sauvegarde
+- [ ] `php artisan backup:monitor` répond « healthy » — il contrôle l'âge
+      (25 h), la taille minimale et le chiffrement effectif
+- [ ] **Une restauration a été testée** (section 6) — une sauvegarde jamais
+      restaurée n'est pas une sauvegarde
 
 ### Fonctionnement
 
@@ -279,7 +287,93 @@ php artisan up
 
 ---
 
-## 6. Supervision
+## 6. Test de restauration
+
+**Une sauvegarde jamais restaurée n'est pas une sauvegarde.** Cette procédure
+est à exécuter **une fois avant la mise en production**, puis **une fois par
+trimestre**.
+
+Elle se déroule entièrement sur une base et un dossier de travail séparés :
+la production n'est jamais touchée.
+
+### 1. Récupérer l'archive
+
+```bash
+php artisan backup:list
+```
+
+Notez le nom de la dernière archive, puis téléchargez-la depuis le stockage
+distant vers un dossier de travail :
+
+```bash
+mkdir -p /tmp/restauration && cd /tmp/restauration
+aws s3 cp "s3://VOTRE-BUCKET/LN Immigration/2026-08-14-01-30-00.zip" .
+```
+
+### 2. Ouvrir l'archive chiffrée
+
+```bash
+unzip -P "$BACKUP_ARCHIVE_PASSWORD" 2026-08-14-01-30-00.zip -d contenu/
+```
+
+> Si le mot de passe est refusé ou introuvable, **arrêtez-vous ici** : la
+> sauvegarde est inexploitable. C'est précisément ce que ce test sert à
+> découvrir aujourd'hui plutôt que le jour d'un incident.
+
+Vous devez trouver :
+
+- `db-dumps/mysql-<base>.sql` — le dump de la base
+- `storage/app/private/documents/…` — les pièces des candidats
+- `storage/app/public/temoignages/…` — les photos des témoignages
+
+### 3. Restaurer la base dans une base vierge
+
+```bash
+mysql -u root -p -e "CREATE DATABASE ln_restauration CHARACTER SET utf8mb4;"
+mysql -u root -p ln_restauration < contenu/db-dumps/mysql-*.sql
+```
+
+### 4. Vérifier le contenu
+
+```bash
+mysql -u root -p ln_restauration -e "
+  SELECT COUNT(*) AS dossiers FROM applications;
+  SELECT COUNT(*) AS documents FROM documents;
+  SELECT COUNT(*) AS comptes FROM users;
+  SELECT reference, status, created_at FROM applications ORDER BY id DESC LIMIT 5;
+"
+```
+
+Puis vérifiez que **les fichiers correspondent aux lignes** — le point le plus
+souvent négligé, et celui qui fait échouer les restaurations réelles :
+
+```bash
+# Nombre de documents attendus d'après la base
+mysql -u root -p ln_restauration -sN -e "SELECT COUNT(*) FROM documents;"
+
+# Nombre de fichiers réellement présents dans l'archive
+find contenu/storage/app/private/documents -type f | wc -l
+```
+
+Les deux nombres doivent coïncider. Ouvrez enfin **un** document au hasard pour
+confirmer qu'il n'est pas corrompu.
+
+### 5. Nettoyer
+
+```bash
+mysql -u root -p -e "DROP DATABASE ln_restauration;"
+rm -rf /tmp/restauration
+```
+
+### Consigner le résultat
+
+| Date | Archive testée | Base restaurée | Fichiers concordants | Par |
+|---|---|---|---|---|
+| | | | | |
+
+---
+
+## 7. Supervision
 
 | À surveiller | Commande |
 |---|---|

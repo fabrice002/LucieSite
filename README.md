@@ -230,7 +230,7 @@ Les contrôleurs orchestrent, la logique vit dans `app/Actions` :
 | `SubmitApplication` | Enregistre un dossier et ses documents, en transaction |
 | `GenerateApplicationReference` | Génère `LN-2026-00147` |
 | `BuildApplicationArchive` | Assemble les documents en ZIP |
-| `PurgeExpiredApplications` | Efface les dossiers supprimés depuis 90 jours |
+| `PurgeExpiredApplications` | Efface les dossiers supprimés ou sans activité |
 | `NotifyApplicant` | Informe le candidat : statut, message, alerte e-mail |
 
 ### Informer un candidat
@@ -283,7 +283,11 @@ négociables.
 5. Le formulaire est protégé par un **champ honeypot** et un limiteur de
    5 tentatives par minute.
 6. `SoftDeletes` sur les dossiers, avec **purge définitive après 90 jours**,
-   fichiers compris.
+   fichiers compris. Un dossier **vivant mais sans aucune activité depuis
+   36 mois** (`RETENTION_MONTHS`) est également effacé : sans cette règle, un
+   dossier « validé » conserverait un passeport indéfiniment. Un préavis part
+   aux comptes `admin` 30 jours avant, pour permettre une exception — toute
+   intervention sur le dossier repousse l'échéance.
 7. L'inscription publique est **désactivée**. Les comptes se créent en console.
 8. L'accès au back-office exige un **e-mail vérifié et un rôle**.
 9. Les documents sont **toujours servis en pièce jointe**, avec
@@ -346,7 +350,21 @@ Le serveur doit exécuter le planificateur **toutes les minutes** :
 | `backup:run` | 01h30 |
 | `ln:purge-applications` | 03h30 |
 
-`ln:purge-applications` accepte `--dry-run` pour vérifier sans rien effacer.
+`ln:purge-applications` accepte `--dry-run` : il annonce alors les deux règles
+et liste les dossiers arrivant à échéance, sans rien effacer.
+
+### Consentement et droit à l'effacement
+
+Le dépôt exige une **case à cocher obligatoire**, vérifiée côté serveur et pas
+seulement par le navigateur. Sont enregistrés la date du consentement et la
+**version de la politique acceptée** (`PRIVACY_VERSION`) : sans elle, on ne
+saurait pas à quoi le candidat a consenti.
+
+Un administrateur peut **effacer définitivement** un dossier depuis sa fiche.
+La confirmation impose de recopier la référence — sur une action irréversible
+qui détruit des pièces d'identité, un simple « Oui » ne suffit pas. Seule
+subsiste une ligne du journal d'activité attestant l'opération et son auteur,
+sans aucune donnée du candidat.
 
 ---
 
@@ -363,13 +381,31 @@ sauvegarde qui vit sur le même serveur que les données ne protège de rien.
 BACKUP_DISKS=s3
 ```
 
+Les archives sont **chiffrées en AES-256** avec `BACKUP_ARCHIVE_PASSWORD`.
+
+> ⚠ Sans cette variable, `laravel-backup` produit une archive valide et
+> **parfaitement lisible**, sans aucun avertissement. Le contrôle de santé
+> quotidien rattrape ce silence.
+
 Seuls les échecs déclenchent une notification, pour que les vraies alertes ne se
-noient pas dans le bruit.
+noient pas dans le bruit. Mais une sauvegarde qui **ne se lance plus** n'échoue
+pas : elle n'existe pas. `backup:monitor`, exécuté chaque matin à 08h00, vérifie
+donc trois choses :
+
+| Contrôle | Ce qu'il rattrape |
+|---|---|
+| Âge maximal : 25 h | Cron cassé, disque plein, identifiants distants expirés |
+| Taille minimale | Dump de base vide ou tronqué, `mysqldump` devenu inaccessible |
+| Chiffrement effectif | Mot de passe absent : archives en clair sans avertissement |
 
 ```bash
 php artisan backup:run     # sauvegarde manuelle
 php artisan backup:list    # état des sauvegardes
+php artisan backup:monitor # contrôle de santé
 ```
+
+La procédure de **test de restauration** est décrite dans `DEPLOIEMENT.md`,
+section 6. À exécuter avant la mise en production, puis chaque trimestre.
 
 ---
 

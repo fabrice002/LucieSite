@@ -176,6 +176,26 @@
                 </div>
             </fieldset>
 
+            {{-- Consentement --}}
+            <div class="rounded-xl border border-line bg-surface-muted p-5">
+                <label for="consentement" class="flex cursor-pointer items-start gap-3">
+                    <input type="checkbox" id="consentement" name="consentement" value="1" required
+                           @checked(old('consentement'))
+                           class="mt-0.5 size-5 shrink-0 rounded border-line text-brand focus:ring-2 focus:ring-brand-line">
+
+                    <span class="text-sm leading-relaxed text-ink">
+                        {{ content('depot.consentement') }}
+                        <a href="{{ route('confidentialite') }}" target="_blank" rel="noopener"
+                           class="font-medium text-brand-text underline underline-offset-2">
+                            {{ content('depot.consentement_lien', 'politique de confidentialité') }}
+                        </a>.
+                        <span class="text-danger">*</span>
+                    </span>
+                </label>
+
+                @error('consentement')<p class="{{ $errorClass }}">{{ $message }}</p>@enderror
+            </div>
+
             <div class="border-t border-line pt-6">
                 <p data-alerte-televersement hidden role="alert"
                    class="mb-5 rounded-md border border-notice-line bg-notice p-4 text-sm text-notice-ink">

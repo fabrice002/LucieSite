@@ -20,6 +20,12 @@ class SiteContentSeeder extends Seeder
 {
     private const TODO = '[À COMPLÉTER PAR LA CLIENTE]';
 
+    /**
+     * Version du texte de confidentialité, enregistrée avec chaque consentement.
+     * À incrémenter en même temps que config('retention.privacy_version').
+     */
+    private const VERSION_CONFIDENTIALITE = '2026-01';
+
     public function run(): void
     {
         foreach ($this->blocks() as $key => $block) {
@@ -244,6 +250,8 @@ class SiteContentSeeder extends Seeder
                     'aide_diplomes' => 'Facultatif. Vous pouvez en envoyer plusieurs.',
                     'label_autres' => 'Autres documents',
                     'aide_autres' => 'Facultatif. Vous pouvez en envoyer plusieurs.',
+                    'consentement' => 'J\'autorise LN Immigration à collecter et conserver les informations et documents de ce formulaire pour l\'étude de mon projet d\'immigration, dans les conditions décrites par la',
+                    'consentement_lien' => 'politique de confidentialité',
                     'bouton_envoyer' => 'Envoyer mon dossier',
                     'mention_donnees' => self::TODO,
                 ],
@@ -328,19 +336,108 @@ class SiteContentSeeder extends Seeder
                 'content' => [
                     'meta_titre' => 'Politique de confidentialité — LN Immigration',
                     'titre' => 'Politique de confidentialité',
-                    'introduction_html' => self::TODO,
+                    'version' => 'Version '.self::VERSION_CONFIDENTIALITE,
+
+                    'introduction_html' => '<p>Déposer un dossier d\'immigration suppose de nous confier des pièces '
+                        .'d\'identité et des documents personnels. Cette page décrit précisément ce que nous collectons, '
+                        .'pourquoi, combien de temps nous le conservons, et comment en demander l\'effacement.</p>'
+                        .'<p>'.self::TODO.' — identité du responsable de traitement : raison sociale, forme juridique, '
+                        .'siège social et numéro d\'immatriculation du cabinet.</p>',
+
                     'donnees_titre' => 'Données collectées',
-                    'donnees_html' => self::TODO,
+                    'donnees_html' => '<p>Lorsque vous déposez un dossier, nous collectons :</p>'
+                        .'<ul>'
+                        .'<li>votre <strong>identité</strong> : prénom et nom ;</li>'
+                        .'<li>vos <strong>coordonnées</strong> : adresse e-mail et numéro de téléphone ;</li>'
+                        .'<li>votre <strong>pays de résidence</strong> et le programme d\'immigration visé ;</li>'
+                        .'<li>le <strong>message libre</strong> que vous nous adressez ;</li>'
+                        .'<li>les <strong>documents</strong> que vous téléversez : CV, résultat TCF ou TEF, et, si vous '
+                        .'choisissez de les joindre, passeport, diplômes et autres pièces ;</li>'
+                        .'<li>votre <strong>adresse IP</strong> au moment du dépôt, conservée à des fins de sécurité et '
+                        .'de lutte contre les envois automatisés ;</li>'
+                        .'<li>la <strong>date de votre consentement</strong> et la version de la présente politique que '
+                        .'vous avez acceptée.</li>'
+                        .'</ul>'
+                        .'<p>Nous ne collectons aucune donnée à votre insu : il n\'y a sur ce site ni traceur '
+                        .'publicitaire, ni outil de mesure d\'audience tiers.</p>',
+
                     'finalite_titre' => 'Pourquoi nous les collectons',
-                    'finalite_html' => self::TODO,
+                    'finalite_html' => '<p>Ces informations servent exclusivement à :</p>'
+                        .'<ul>'
+                        .'<li>étudier votre projet d\'immigration et évaluer son admissibilité ;</li>'
+                        .'<li>vous recontacter et vous tenir informé de l\'avancement de votre dossier ;</li>'
+                        .'<li>constituer, le cas échéant, votre demande auprès des autorités compétentes.</li>'
+                        .'</ul>'
+                        .'<p>Elles ne sont jamais utilisées à des fins publicitaires, ni vendues, ni cédées à des tiers '
+                        .'à des fins commerciales.</p>'
+                        .'<p>Le traitement repose sur <strong>votre consentement</strong>, recueilli lors du dépôt de '
+                        .'votre dossier. Vous pouvez le retirer à tout moment.</p>',
+
+                    'destinataires_titre' => 'Qui a accès à vos données',
+                    'destinataires_html' => '<p>L\'accès est strictement limité :</p>'
+                        .'<ul>'
+                        .'<li>les <strong>membres du cabinet</strong> chargés du traitement des dossiers, chacun '
+                        .'disposant d\'un compte nominatif ;</li>'
+                        .'<li>notre <strong>hébergeur</strong>, pour le seul stockage technique — '.self::TODO.' : '
+                        .'nom et pays d\'hébergement ;</li>'
+                        .'<li>les <strong>autorités d\'immigration</strong> concernées, uniquement si vous nous '
+                        .'mandatez pour déposer une demande en votre nom.</li>'
+                        .'</ul>'
+                        .'<p>Chaque consultation ou téléchargement d\'une de vos pièces est enregistré, avec le nom du '
+                        .'membre du cabinet et la date.</p>',
+
                     'conservation_titre' => 'Durée de conservation',
-                    'conservation_html' => self::TODO,
+                    'conservation_html' => '<p>Nous ne conservons vos données que le temps nécessaire :</p>'
+                        .'<ul>'
+                        .'<li>un dossier <strong>sans aucune activité depuis 36 mois</strong> est définitivement '
+                        .'effacé, documents compris ;</li>'
+                        .'<li>un dossier <strong>supprimé</strong> par le cabinet l\'est définitivement au bout de '
+                        .'90 jours ;</li>'
+                        .'<li>un effacement demandé par vos soins est exécuté sans attendre ces délais.</li>'
+                        .'</ul>'
+                        .'<p>L\'effacement est irréversible et porte sur l\'ensemble des fichiers. Seule subsiste une '
+                        .'trace technique attestant que l\'opération a eu lieu, sans aucune donnée personnelle.</p>',
+
                     'securite_titre' => 'Sécurité de vos documents',
-                    'securite_html' => self::TODO,
+                    'securite_html' => '<p>Vos documents ne sont jamais accessibles publiquement :</p>'
+                        .'<ul>'
+                        .'<li>ils sont stockés sur un <strong>espace privé</strong>, hors de toute adresse web ;</li>'
+                        .'<li>ils sont enregistrés sous un <strong>nom aléatoire</strong>, sans rapport avec votre '
+                        .'identité ;</li>'
+                        .'<li>leur téléchargement exige une <strong>authentification</strong> et n\'est ouvert qu\'aux '
+                        .'membres habilités du cabinet ;</li>'
+                        .'<li>chaque fichier déposé est <strong>analysé</strong> avant d\'être conservé ;</li>'
+                        .'<li>les échanges avec ce site sont <strong>chiffrés</strong>, et les sauvegardes le sont '
+                        .'également.</li>'
+                        .'</ul>'
+                        .'<p>La page de suivi n\'affiche que l\'état de votre dossier et les messages qui vous sont '
+                        .'destinés, après vérification de votre référence et de votre adresse e-mail.</p>',
+
                     'droits_titre' => 'Vos droits',
-                    'droits_html' => self::TODO,
+                    'droits_html' => '<p>Vous pouvez à tout moment demander :</p>'
+                        .'<ul>'
+                        .'<li>l\'<strong>accès</strong> aux données que nous détenons sur vous ;</li>'
+                        .'<li>la <strong>rectification</strong> d\'une information inexacte ;</li>'
+                        .'<li>l\'<strong>effacement</strong> de votre dossier et de tous ses documents ;</li>'
+                        .'<li>le <strong>retrait de votre consentement</strong>, ce qui entraîne l\'arrêt du '
+                        .'traitement et l\'effacement de votre dossier.</li>'
+                        .'</ul>'
+                        .'<p>Pour exercer l\'un de ces droits, écrivez-nous à l\'adresse indiquée ci-dessous en '
+                        .'précisant <strong>la référence de votre dossier</strong> et l\'adresse e-mail utilisée lors '
+                        .'du dépôt. Nous vous répondons sous '.self::TODO.' jours.</p>'
+                        .'<p>'.self::TODO.' — autorité de contrôle compétente auprès de laquelle une réclamation peut '
+                        .'être déposée.</p>',
+
                     'contact_titre' => 'Nous écrire',
-                    'contact_html' => self::TODO,
+                    'contact_html' => '<p>Pour toute question relative à vos données, ou pour exercer vos droits :</p>'
+                        .'<p>'.self::TODO.' — adresse e-mail dédiée, adresse postale et numéro de téléphone du '
+                        .'cabinet.</p>'
+                        .'<p>'.self::TODO.' — nom et coordonnées du délégué à la protection des données, s\'il en '
+                        .'existe un.</p>',
+
+                    'maj_titre' => 'Modifications de cette politique',
+                    'maj_html' => '<p>Toute modification substantielle de ce texte donne lieu à une nouvelle version. '
+                        .'La version que vous avez acceptée lors du dépôt est conservée avec votre dossier.</p>',
                 ],
             ],
         ];

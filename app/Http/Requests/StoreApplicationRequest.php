@@ -147,6 +147,10 @@ class StoreApplicationRequest extends FormRequest
             'autres' => ['nullable', 'array', 'max:10'],
             'autres.*' => $file,
 
+            // Le consentement est vérifié ici, pas seulement par l'attribut
+            // « required » du navigateur : celui-ci se contourne en trois clics.
+            'consentement' => ['accepted'],
+
             // Honeypot : invisible pour un humain, rempli par les robots.
             'website' => ['prohibited'],
         ];
@@ -161,6 +165,7 @@ class StoreApplicationRequest extends FormRequest
     {
         return [
             'phone.regex' => 'Le téléphone doit être un numéro valide, de préférence au format international (ex. +237 6 XX XX XX XX).',
+            'consentement.accepted' => 'Vous devez accepter la politique de confidentialité pour déposer votre dossier.',
             'website.prohibited' => 'Votre envoi a été refusé.',
         ];
     }
@@ -183,7 +188,13 @@ class StoreApplicationRequest extends FormRequest
             'message',
         ]);
 
-        return $attributes;
+        // On note à quoi le candidat a consenti, pas seulement qu'il a consenti :
+        // sans la version du texte, le consentement n'est pas opposable.
+        return [
+            ...$attributes,
+            'consented_at' => now()->toDateTimeString(),
+            'privacy_version' => (string) config('retention.privacy_version'),
+        ];
     }
 
     /**

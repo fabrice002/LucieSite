@@ -30,6 +30,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property ApplicationStatus $status
  * @property string|null $internal_notes
  * @property string|null $ip_address
+ * @property Carbon|null $consented_at
+ * @property string|null $privacy_version
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -54,6 +56,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
     'status',
     'internal_notes',
     'ip_address',
+    'consented_at',
+    'privacy_version',
 ])]
 class Application extends Model
 {
@@ -89,7 +93,30 @@ class Application extends Model
     {
         return [
             'status' => ApplicationStatus::class,
+            'consented_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Date de la dernière activité connue sur le dossier.
+     *
+     * Sert à la conservation : un dossier suivi, même ancien, n'est jamais
+     * purgé. Seuls les dossiers réellement abandonnés le sont.
+     */
+    public function lastActivityAt(): Carbon
+    {
+        $dates = [
+            $this->updated_at,
+            $this->created_at,
+            $this->updates()->max('created_at'),
+        ];
+
+        $plusRecente = collect($dates)
+            ->filter()
+            ->map(fn (mixed $date): Carbon => Carbon::parse((string) $date))
+            ->max();
+
+        return $plusRecente ?? Carbon::now();
     }
 
     /**

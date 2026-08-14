@@ -1,5 +1,8 @@
 <?php
 
+use App\Support\Backup\ArchiveIsEncrypted;
+use App\Support\Backup\MaximumAgeInHours;
+use App\Support\Backup\MinimumSizeInMegabytes;
 use Spatie\Backup\Notifications\Notifiable;
 use Spatie\Backup\Notifications\Notifications\BackupHasFailedNotification;
 use Spatie\Backup\Notifications\Notifications\BackupWasSuccessfulNotification;
@@ -8,7 +11,6 @@ use Spatie\Backup\Notifications\Notifications\CleanupWasSuccessfulNotification;
 use Spatie\Backup\Notifications\Notifications\HealthyBackupWasFoundNotification;
 use Spatie\Backup\Notifications\Notifications\UnhealthyBackupWasFoundNotification;
 use Spatie\Backup\Tasks\Cleanup\Strategies\DefaultStrategy;
-use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumAgeInDays;
 use Spatie\Backup\Tasks\Monitor\HealthChecks\MaximumStorageInMegabytes;
 
 return [
@@ -191,6 +193,13 @@ return [
         /*
          * The password to be used for archive encryption.
          * Set to `null` to disable encryption.
+         *
+         * Les archives contiennent des scans de passeports et de diplômes, et
+         * partent sur un stockage distant. En production, cette valeur DOIT
+         * être renseignée.
+         *
+         * Elle se conserve HORS DU SERVEUR. Perdue, les sauvegardes deviennent
+         * définitivement illisibles.
          */
         'password' => env('BACKUP_ARCHIVE_PASSWORD'),
 
@@ -207,8 +216,11 @@ return [
         /*
          * After creating the zip, verify it can be opened and contains files.
          * Recommended for critical backups but adds a small overhead.
+         *
+         * Activé : une archive corrompue qui passe inaperçue jusqu'au jour de
+         * la restauration ne vaut pas mieux qu'une absence de sauvegarde.
          */
-        'verify_backup' => false,
+        'verify_backup' => true,
 
         /*
          * The number of attempts, in case the backup command encounters an exception
@@ -309,13 +321,26 @@ return [
      * If a backup does not meet the specified requirements the
      * UnHealthyBackupWasFound event will be fired.
      */
+    /*
+     | Surveillé par « backup:monitor », exécuté chaque matin à 08h00.
+     |
+     | Une sauvegarde qui échoue déclenche une alerte. Une sauvegarde qui ne se
+     | lance plus — cron cassé, disque plein, identifiants distants expirés —
+     | n'échoue pas : elle n'existe pas. Ces contrôles rattrapent ce silence.
+     */
     'monitor_backups' => [
         [
             'name' => env('APP_NAME', 'laravel-backup'),
-            'disks' => ['local'],
+            'disks' => explode(',', (string) env('BACKUP_DISKS', 'local')),
             'health_checks' => [
-                MaximumAgeInDays::class => 1,
-                MaximumStorageInMegabytes::class => 5000,
+                // La sauvegarde tourne à 01h30 : 25 heures laissent la marge
+                // d'un décalage d'exécution, sans laisser passer une nuit.
+                MaximumAgeInHours::class => 25,
+                // Une archive anormalement légère trahit un dump vide.
+                MinimumSizeInMegabytes::class => (float) env('BACKUP_MINIMUM_MEGABYTES', 1),
+                MaximumStorageInMegabytes::class => (int) env('BACKUP_MAXIMUM_MEGABYTES', 5000),
+                // Sans mot de passe, l'archive sort en clair sans avertissement.
+                ArchiveIsEncrypted::class,
             ],
         ],
 

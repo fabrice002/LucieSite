@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Applications\Pages;
 
 use App\Actions\BuildApplicationArchive;
+use App\Filament\Resources\Applications\Actions\ForgetApplicationAction;
 use App\Filament\Resources\Applications\Actions\NotifyApplicantAction;
 use App\Filament\Resources\Applications\ApplicationResource;
 use App\Models\Application;
@@ -42,6 +43,8 @@ class ViewApplication extends ViewRecord
                 }),
 
             EditAction::make()->label('Traiter le dossier'),
+
+            ForgetApplicationAction::make(),
         ];
     }
 }

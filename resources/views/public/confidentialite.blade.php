@@ -2,12 +2,16 @@
     <x-page-header :titre="content('confidentialite.titre', 'Politique de confidentialité')" />
 
     <section class="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        @if ($version = content('confidentialite.version'))
+            <p class="mb-6 text-sm text-ink-muted">{{ $version }}</p>
+        @endif
+
         <div class="prose-simple leading-relaxed text-ink-muted">
             {!! content('confidentialite.introduction_html') !!}
         </div>
 
         <div class="mt-10 space-y-10">
-            @foreach (['donnees', 'finalite', 'conservation', 'securite', 'droits', 'contact'] as $section)
+            @foreach (['donnees', 'finalite', 'destinataires', 'conservation', 'securite', 'droits', 'contact', 'maj'] as $section)
                 <article>
                     <h2 class="text-xl font-semibold text-ink-strong">
                         {{ content("confidentialite.{$section}_titre") }}

@@ -77,6 +77,8 @@ function candidat(array $overrides = []): array
         'email' => 'aicha@example.cm',
         'phone' => '+237 699887766',
         'country_of_residence' => 'Cameroun',
+        // Le consentement est obligatoire et vérifié côté serveur.
+        'consentement' => '1',
     ], $overrides);
 }
 

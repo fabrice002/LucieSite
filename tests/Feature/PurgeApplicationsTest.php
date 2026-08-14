@@ -35,7 +35,7 @@ it('efface définitivement les dossiers supprimés depuis plus de 90 jours', fun
 
     $resultat = app(PurgeExpiredApplications::class)();
 
-    expect($resultat)->toBe(['dossiers' => 1, 'fichiers' => 1]);
+    expect($resultat)->toBe(['dossiers' => 1, 'fichiers' => 1, 'supprimes' => 1, 'inactifs' => 0]);
 
     // La ligne a disparu, y compris de la corbeille.
     expect(Application::withTrashed()->whereKey($ancien->id)->exists())->toBeFalse()
