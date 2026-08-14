@@ -4,6 +4,31 @@ Procédure de déploiement et checklist à parcourir **avant** d'ouvrir le site 
 public. Le site héberge des scans de passeports : aucun point de la section
 « Sécurité » n'est optionnel.
 
+## Sommaire
+
+1. [Prérequis serveur](#1-prérequis-serveur)
+2. [Déploiement](#2-déploiement)
+3. [Processus permanents](#3-processus-permanents)
+4. [Reverse proxy et limiteurs de débit](#4-reverse-proxy-et-limiteurs-de-débit)
+5. [Checklist avant ouverture](#5-checklist-avant-ouverture)
+6. [Test de restauration](#6-test-de-restauration)
+7. [Mises à jour](#7-mises-à-jour)
+8. [Supervision](#8-supervision)
+
+## Les quatre pannes silencieuses
+
+Avant toute chose, retenez ces quatre configurations dont l'oubli **ne produit
+aucune erreur** — tout semble fonctionner :
+
+| Oubli | Conséquence invisible |
+|---|---|
+| Worker de file arrêté | Aucun e-mail ne part. Ni au candidat, ni au cabinet. |
+| `BACKUP_ARCHIVE_PASSWORD` vide | Les archives partent **en clair** sur le stockage distant. |
+| `TRUSTED_PROXIES` vide derrière un proxy | Toutes les requêtes partagent une IP : les limiteurs bloquent tout le monde. |
+| `DB_DUMP_BINARY_PATH` manquant | Les sauvegardes ne contiennent **pas la base**. |
+
+Chacune est vérifiée par un point de la checklist en section 5.
+
 ---
 
 ## 1. Prérequis serveur
@@ -184,7 +209,84 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
 
 ---
 
-## 4. Checklist avant ouverture
+## 4. Reverse proxy et limiteurs de débit
+
+Le site est presque toujours servi derrière un frontal — Nginx, un load
+balancer, ou Cloudflare. **Il faut le déclarer**, sinon Laravel voit l'adresse
+du proxy et non celle du visiteur : toutes les requêtes partagent la même IP et
+les limiteurs de débit bloquent tout le monde après quelques consultations.
+
+C'est la panne la plus déroutante à diagnostiquer, parce que rien n'est en
+erreur : le site fonctionne, mais les candidats reçoivent des 429.
+
+```dotenv
+# Le serveur n'est joignable QUE par le proxy
+TRUSTED_PROXIES=*
+
+# Ou, plus sûr, la liste des proxies
+TRUSTED_PROXIES=10.0.0.1,10.0.0.2
+```
+
+> `*` ne se pose que si le serveur applicatif est inaccessible directement.
+> Sinon, l'en-tête `X-Forwarded-For` devient falsifiable et le limiteur se
+> contourne en changeant d'IP à volonté.
+
+Le frontal doit transmettre les en-têtes :
+
+```nginx
+proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-Host  $host;
+```
+
+Et ne pas mettre les réponses en tampon, sans quoi le téléchargement groupé
+d'un dossier attendrait la fin de la compression avant d'émettre le premier
+octet — et pourrait dépasser le délai du proxy :
+
+```nginx
+proxy_buffering off;
+proxy_read_timeout 300s;
+```
+
+L'application envoie déjà `X-Accel-Buffering: no` sur ces réponses ; ces
+directives sont le filet de sécurité si le frontal l'ignore.
+
+Vérification, après déploiement **et après `config:cache`** :
+
+```bash
+php artisan config:cache
+php artisan tinker --execute="echo config('proxies.trusted');"
+# Puis, depuis un navigateur, comparez l'IP vue par le site avec
+# celle renvoyée par https://api.ipify.org
+```
+
+> Le réglage est lu depuis `config/proxies.php` et appliqué par
+> `AppServiceProvider`, et non dans `bootstrap/app.php`. À cet endroit, seul
+> `env()` est disponible, et il renvoie `null` dès que la configuration est
+> mise en cache — c'est-à-dire précisément en production. Le réglage aurait été
+> silencieusement ignoré là où il compte.
+
+### Plafonds en vigueur
+
+| Route | Plafond | Clé |
+|---|---|---|
+| `/deposer-mon-dossier` | 5 / min | IP |
+| `/suivre-mon-dossier` | 10 / min | IP + référence |
+| `/suivre-mon-dossier` | 60 / min | IP |
+| `/televersement` | 300 / min | IP |
+
+La clé du suivi combine l'IP **et la référence** parce qu'au Cameroun une
+grande part des abonnés mobiles partagent une même adresse publique via le
+CGNAT, et les cybercafés davantage encore. Deux candidats derrière la même IP
+ne se gênent donc pas.
+
+**Si des blocages sont signalés sur le dépôt**, appliquez la même logique :
+combinez l'IP et l'adresse e-mail. La ligne exacte figure en commentaire dans
+`app/Providers/AppServiceProvider.php`.
+
+---
+
+## 5. Checklist avant ouverture
 
 ### Environnement
 
@@ -210,6 +312,9 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
       jamais rendu dans l'onglet (vérifier l'en-tête `Content-Disposition`)
 - [ ] Double authentification activée sur le compte de l'administratrice
 - [ ] Certificat TLS valide, redirection HTTP → HTTPS
+- [ ] **`TRUSTED_PROXIES` renseigné** si le site est derrière un frontal, et
+      vérifié **après** `config:cache` (section 4)
+- [ ] L'IP vue par le site correspond à celle du visiteur, pas à celle du proxy
 
 ### Sauvegardes
 
@@ -242,7 +347,10 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
 - [ ] Le suivi par référence + e-mail affiche le statut
 - [ ] Une mauvaise adresse e-mail ne révèle rien
 - [ ] Téléchargement d'un document depuis `/admin`
-- [ ] Export ZIP d'un dossier
+- [ ] **Export ZIP d'un dossier volumineux** (plusieurs scans) : le
+      téléchargement doit démarrer immédiatement. S'il attend plusieurs
+      secondes avant de commencer, le frontal met la réponse en tampon —
+      voir `proxy_buffering off` en section 4
 - [ ] **Test sur un vrai téléphone Android en 3G** : dépôt avec deux scans
       photographiés, coupure du réseau en cours d'envoi, puis reprise
 
@@ -259,31 +367,6 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
 - [ ] `composer lint:check` passe
 - [ ] `composer types:check` passe
 - [ ] `php artisan test` passe
-
----
-
-## 5. Mises à jour
-
-```bash
-php artisan down --render="errors::503"
-
-git pull
-composer install --no-dev --optimize-autoloader
-npm ci && npm run build
-php artisan migrate --force
-php artisan db:seed --class=SiteContentSeeder --force   # ajoute les nouvelles clés
-
-php artisan config:cache && php artisan route:cache && php artisan view:cache
-php artisan queue:restart
-
-php artisan up
-```
-
-> `SiteContentSeeder` n'écrase jamais un texte modifié depuis le back-office :
-> il ajoute uniquement les clés absentes.
-
-> `queue:restart` est indispensable : sans lui, les workers continuent
-> d'exécuter l'ancien code.
 
 ---
 
@@ -373,7 +456,40 @@ rm -rf /tmp/restauration
 
 ---
 
-## 7. Supervision
+## 7. Mises à jour
+
+```bash
+php artisan down --render="errors::503"
+
+git pull
+composer install --no-dev --optimize-autoloader
+npm ci && npm run build
+php artisan migrate --force
+php artisan db:seed --class=SiteContentSeeder --force   # ajoute les nouvelles clés
+
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan queue:restart
+
+php artisan up
+```
+
+> `SiteContentSeeder` n'écrase jamais un texte modifié depuis le back-office :
+> il ajoute uniquement les clés absentes.
+
+> `queue:restart` est **indispensable** : sans lui, les workers gardent
+> l'ancien code en mémoire et continuent de l'exécuter.
+
+Après chaque mise à jour :
+
+```bash
+php artisan ln:test-mail vous@exemple.com   # le SMTP répond toujours
+php artisan backup:monitor                  # les sauvegardes sont saines
+php artisan schedule:list                   # les cinq tâches sont là
+```
+
+---
+
+## 8. Supervision
 
 | À surveiller | Commande |
 |---|---|
@@ -383,10 +499,43 @@ rm -rf /tmp/restauration
 | Journal d'activité | table `activity_log` |
 | Erreurs | `storage/logs/laravel.log` |
 
-Points d'attention :
+### Rythme conseillé
+
+| Fréquence | À faire |
+|---|---|
+| Quotidien | Lire les alertes reçues par e-mail. Aucune alerte **n'est pas** une bonne nouvelle en soi : voir ci-dessous. |
+| Hebdomadaire | `php artisan queue:failed` et `php artisan backup:list` |
+| Mensuel | Espace disque, proportion de pièces en « Analyse indisponible » |
+| Trimestriel | **Test de restauration** (section 6) |
+| Annuel | Renouveler `BACKUP_ARCHIVE_PASSWORD` et les identifiants de stockage |
+
+### Points d'attention
 
 - **`storage/app/private` grossit en continu.** La purge à 90 jours ne concerne
-  que les dossiers supprimés. Surveillez l'espace disque.
-- **Les échecs de sauvegarde sont notifiés par e-mail.** Si vous ne recevez
-  jamais rien, vérifiez que le worker tourne — sinon l'alerte elle-même reste
-  bloquée en file.
+  que les dossiers supprimés ; celle à 36 mois, les dossiers sans activité. Un
+  cabinet actif accumule malgré tout. Surveillez l'espace disque.
+
+- **Ne pas recevoir d'alerte n'est pas rassurant en soi.** Les notifications
+  passent elles-mêmes par la file d'attente : si le worker est arrêté, l'alerte
+  qui vous préviendrait reste bloquée. Le bandeau du tableau de bord est le seul
+  signal qui ne dépend pas de la file — c'est pourquoi il existe.
+
+- **Surveillez la proportion de pièces « Analyse indisponible ».** Au-delà de
+  quelques cas isolés, ClamAV ne répond plus et les fichiers entrent sans être
+  analysés.
+
+- **Le journal d'activité est la seule trace après un effacement.** Ne le purgez
+  pas : il atteste qui a supprimé quoi et quand, sans conserver la moindre
+  donnée de candidat.
+
+### Vérification mensuelle en une commande
+
+```bash
+php artisan backup:monitor \
+  && php artisan queue:failed \
+  && php artisan ln:purge-applications --dry-run \
+  && du -sh storage/app/private
+```
+
+Le `--dry-run` annonce les dossiers qui seront effacés dans les trente jours,
+sans rien supprimer : c'est le moment de décider d'une éventuelle exception.

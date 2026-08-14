@@ -14,6 +14,29 @@ Le site est **entièrement en français**. Les candidats se connectent
 majoritairement depuis un téléphone Android, en 3G, avec des scans photographiés
 de 5 à 10 Mo. Cette contrainte a guidé la plupart des choix techniques.
 
+## Sommaire
+
+1. [Stack](#1-stack)
+2. [Installation en développement](#2-installation-en-développement)
+3. [Architecture](#3-architecture)
+4. [Sécurité](#4-sécurité)
+5. [Upload résilient](#5-upload-résilient)
+6. [Tâches planifiées](#6-tâches-planifiées)
+7. [Sauvegardes](#7-sauvegardes)
+8. [Qualité](#8-qualité)
+9. [Déploiement](#9-déploiement)
+10. [Dépannage](#10-dépannage)
+
+## Les cinq décisions à connaître avant de toucher au code
+
+| Décision | Pourquoi |
+|---|---|
+| L'e-mail de suivi n'est qu'une **alerte** | Une boîte e-mail peut être partagée ou compromise. Le message du cabinet ne se lit que sur la plateforme, après vérification référence + e-mail. |
+| Les documents vont sur le **disque privé**, servis en pièce jointe | Un PDF légitimement formé peut porter du code. Aucune prévisualisation n'existe nulle part. |
+| Les limiteurs de débit sont **nommés** | La forme anonyme `throttle:5,1` partage une clé entre toutes les routes. Voir §4. |
+| Aucun **texte visible** n'est écrit en dur dans une vue publique | Tout passe par `content()` pour rester modifiable par la cliente. |
+| Les notifications sont **en file d'attente** | Sans worker, aucun e-mail ne part. C'est la première cause de « ça ne marche pas ». |
+
 ---
 
 ## 1. Stack
@@ -28,6 +51,7 @@ de 5 à 10 Mo. Cette contrainte a guidé la plupart des choix techniques.
 | Espace authentifié | Livewire 4 + Flux (starter kit officiel) |
 | Authentification | Laravel Fortify (2FA, réinitialisation, vérification d'e-mail) |
 | Upload résilient | FilePond (envoi par tranches) |
+| Archives ZIP | maennchen/zipstream-php (diffusion en flux) |
 | Compression d'images | browser-image-compression |
 | Rôles | spatie/laravel-permission |
 | Journal d'activité | spatie/laravel-activitylog |
@@ -202,6 +226,18 @@ identique dans les pages et dans l'onglet.
 > Pensez à vider le cache du navigateur : les favicons sont conservés très
 > longtemps, et l'ancienne icône peut sembler persister.
 
+### Modèle de données
+
+| Table | Rôle | Points d'attention |
+|---|---|---|
+| `applications` | Un dossier déposé | `reference` unique (`LN-2026-00147`), l'`id` n'est jamais exposé. `SoftDeletes`. `internal_notes` **strictement privé**. `consented_at` + `privacy_version` |
+| `documents` | Une ligne **par fichier** | `path` en UUID sur le disque privé, `original_name` pour l'affichage seul. `scan_status` renseigné par ClamAV |
+| `application_updates` | Messages adressés au candidat | Lisibles sur la page de suivi. `applications.status` reste la source de vérité du statut |
+| `testimonials` | Témoignages | Créés uniquement depuis le back-office. `photo_path` sur le disque **public** — le seul fichier qui y va |
+| `site_contents` | Tous les textes publics | JSON à plat, unique sur `(key, locale)`. Ajouter une langue = insérer des lignes |
+| `users` | Comptes du cabinet | Aucun compte candidat. `must_change_password` pour les mots de passe provisoires |
+| `activity_log` | Journal | Dépôts, changements de statut, téléchargements, effacements |
+
 ### Textes du site
 
 Aucun texte visible n'est écrit en dur dans une vue publique. Tout passe par le
@@ -229,7 +265,7 @@ Les contrôleurs orchestrent, la logique vit dans `app/Actions` :
 |---|---|
 | `SubmitApplication` | Enregistre un dossier et ses documents, en transaction |
 | `GenerateApplicationReference` | Génère `LN-2026-00147` |
-| `BuildApplicationArchive` | Assemble les documents en ZIP |
+| `BuildApplicationArchive` | Diffuse les documents en ZIP, en flux |
 | `PurgeExpiredApplications` | Efface les dossiers supprimés ou sans activité |
 | `NotifyApplicant` | Informe le candidat : statut, message, alerte e-mail |
 
@@ -305,16 +341,32 @@ négociables.
 
 Ils sont **nommés**, dans `AppServiceProvider::configureRateLimiting()` :
 
-| Limiteur | Plafond |
-|---|---|
-| `depot` | 5 / minute / IP |
-| `suivi` | 5 / minute / IP |
-| `televersement` | 300 / minute / IP |
+| Limiteur | Plafond | Clé |
+|---|---|---|
+| `depot` | 5 / minute | IP |
+| `suivi` | 10 / minute | IP **+ référence saisie** |
+| `suivi` (2ᵉ limite) | 60 / minute | IP |
+| `televersement` | 300 / minute | IP |
+
+**Pourquoi la clé du suivi combine l'IP et la référence.** Au Cameroun, une
+grande part des abonnés mobiles partagent une même adresse IP publique via le
+CGNAT, et les cybercafés davantage encore. Un plafond par IP seule bloquerait
+des candidats parfaitement légitimes qui n'ont fait que consulter leur dossier.
+Avec cette clé, deux candidats derrière la même IP ne se gênent plus ; la
+seconde limite, purement par IP, continue de freiner une énumération massive.
+
+Si des blocages sont constatés sur le dépôt, la même logique s'applique :
+combiner l'IP et l'adresse e-mail. Le commentaire dans `AppServiceProvider`
+donne la ligne exacte.
 
 > ⚠️ N'utilisez **jamais** la forme anonyme `throttle:5,1` sur ce projet. Elle
 > partage une seule clé `domaine|IP` entre **toutes** les routes : les requêtes
 > d'envoi par tranches épuiseraient alors le quota du formulaire de dépôt, et le
 > candidat recevrait un 429 au moment de valider son dossier.
+
+> ⚠️ Renseignez `TRUSTED_PROXIES` si le site est derrière un reverse proxy.
+> Sinon Laravel voit l'adresse du proxy : **toutes** les requêtes partagent la
+> même IP et les limiteurs bloquent tout le monde.
 
 ---
 
@@ -332,6 +384,20 @@ côté serveur.
 
 Les téléversements interrompus sont purgés toutes les heures
 (`uploads:purge-temporary`).
+
+### Téléchargement groupé
+
+« Télécharger tous les documents » **diffuse l'archive en flux** : rien n'est
+construit en mémoire, rien n'est écrit dans un fichier temporaire. Chaque pièce
+est lue depuis le disque et poussée vers le navigateur au fil de l'eau.
+
+Mesuré sur le pire cas du cahier des charges — huit scans de 10 Mo, contenu
+incompressible : **80 Mo diffusés sans croissance mémoire mesurable**. Le
+premier appel alloue le tas PHP habituel ; les suivants ne consomment rien de
+plus, quel que soit le volume.
+
+> Derrière un frontal, `X-Accel-Buffering: no` est envoyé pour empêcher Nginx de
+> mettre la réponse en tampon — ce qui annulerait tout l'intérêt du flux.
 
 ---
 
@@ -427,3 +493,111 @@ Les trois doivent passer avant tout déploiement.
 
 Voir **[DEPLOIEMENT.md](DEPLOIEMENT.md)** pour la procédure complète et la
 checklist de mise en production.
+
+---
+
+## 10. Dépannage
+
+Les pannes ci-dessous ont toutes été rencontrées sur ce projet. Elles ont en
+commun de **ne produire aucune erreur visible** : tout semble fonctionner.
+
+### Aucun e-mail n'arrive
+
+**Cause la plus fréquente : le worker ne tourne pas.** Les notifications sont
+mises en file d'attente ; sans worker, elles y restent indéfiniment.
+
+```bash
+php artisan queue:work          # à laisser tourner
+php artisan queue:failed        # erreurs SMTP éventuelles
+php artisan ln:test-mail vous@exemple.com   # envoi immédiat, hors file
+```
+
+`ln:test-mail` court-circuite la file : si le message part, la configuration
+SMTP est bonne et le problème vient du worker. La commande traduit aussi les
+erreurs SMTP courantes en action concrète.
+
+Un **bandeau rouge** apparaît sur le tableau de bord des comptes `admin` dès
+qu'un e-mail attend depuis plus de dix minutes.
+
+> Après avoir modifié `.env` : `php artisan config:clear`, **puis redémarrez le
+> worker**. Il garde l'application en mémoire et continuerait sinon d'utiliser
+> l'ancienne configuration.
+
+### Les photos des témoignages ne s'affichent pas
+
+Le lien `public/storage` n'existe pas :
+
+```bash
+php artisan storage:link
+```
+
+Si les photos apparaissent en local mais pas depuis un téléphone, vérifiez que
+l'URL du disque public est bien **relative** dans `config/filesystems.php`.
+Construite depuis `APP_URL`, elle casse dès que le site est consulté sur un
+autre hôte ou un autre port.
+
+### Un fichier PDF valide est refusé par le formulaire
+
+L'attribut `accept` des champs fichier doit contenir des **types MIME**, jamais
+des extensions. FilePond traduit cet attribut en `acceptedFileTypes` et les
+attributs de l'élément **priment** sur les options passées au code : avec
+`.pdf`, il compare `".pdf"` au type réel `"application/pdf"` et refuse tout.
+
+Un repli sur l'extension est en place pour Android, qui renvoie souvent un type
+MIME vide selon l'application depuis laquelle le fichier est choisi.
+
+### Un 429 apparaît alors que le trafic est faible
+
+Deux causes possibles :
+
+1. **Un `throttle:5,1` anonyme** a été introduit quelque part. Cette forme
+   partage une seule clé `domaine|IP` entre **toutes** les routes. Utilisez
+   toujours un limiteur nommé.
+2. **`TRUSTED_PROXIES` n'est pas renseigné** derrière un reverse proxy. Laravel
+   voit alors l'adresse du proxy : toutes les requêtes partagent la même IP.
+
+```bash
+php artisan tinker --execute="echo request()->ip();"
+```
+
+### Les sauvegardes de la base sont vides
+
+`mysqldump` n'est pas dans le `PATH`. Renseignez `DB_DUMP_BINARY_PATH` avec le
+dossier qui le contient. Le contrôle de taille minimale de `backup:monitor`
+détecte ce cas.
+
+### Toutes les pièces déposées passent en « infecté »
+
+Vérifiez que `clamdscan` est réellement installé. Un binaire absent fait sortir
+le shell avec le code 1 — **celui-là même que ClamAV réserve aux fichiers
+infectés**. Le code se prémunit contre ce cas, mais un ClamAV mal configuré
+peut produire d'autres faux positifs :
+
+```bash
+which clamdscan && clamdscan --version
+```
+
+Pour désactiver temporairement : `DOCUMENT_SCAN_ENABLED=false`.
+
+### Le téléchargement d'un document renvoie 403
+
+Trois causes, dans l'ordre de fréquence :
+
+1. le compte n'a **ni `admin` ni `agent`** ;
+2. le fichier est marqué **infecté** — c'est voulu ;
+3. l'e-mail du compte n'est **pas vérifié**.
+
+### Les textes modifiés dans le back-office n'apparaissent pas
+
+Le cache aurait dû être invalidé par `SiteContentObserver`. En dernier recours :
+
+```bash
+php artisan cache:clear
+```
+
+### Après un déploiement, le site sert l'ancien code
+
+```bash
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan queue:restart   # indispensable : les workers gardent l'ancien code
+```

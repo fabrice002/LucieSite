@@ -12,7 +12,7 @@ use Filament\Actions\EditAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use RuntimeException;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ViewApplication extends ViewRecord
 {
@@ -28,7 +28,7 @@ class ViewApplication extends ViewRecord
                 ->icon('heroicon-o-archive-box-arrow-down')
                 ->color('gray')
                 ->visible(fn (Application $record): bool => $record->documents()->exists())
-                ->action(function (Application $record, BuildApplicationArchive $archive): ?BinaryFileResponse {
+                ->action(function (Application $record, BuildApplicationArchive $archive): ?StreamedResponse {
                     try {
                         return $archive($record);
                     } catch (RuntimeException $exception) {

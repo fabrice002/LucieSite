@@ -54,8 +54,10 @@ it('ne révèle rien quand l\'e-mail ne correspond pas à la référence', funct
     $response->assertSee(content('suivi.introuvable'));
 });
 
-it('limite les tentatives à 5 par minute', function () {
-    foreach (range(1, 5) as $attempt) {
+it('limite les tentatives sur une même référence', function () {
+    // 10 par minute et par couple IP + référence : voir RateLimitTest pour les
+    // cas de réseaux partagés, qui sont la raison de cette clé composée.
+    foreach (range(1, 10) as $attempt) {
         $this->post(route('suivi.show'), [
             'reference' => 'LN-2026-00001',
             'email' => 'brute@example.cm',

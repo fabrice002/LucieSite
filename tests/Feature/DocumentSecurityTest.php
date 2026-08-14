@@ -181,19 +181,27 @@ it('assemble l\'archive sans charger les fichiers en mémoire', function () {
         Storage::disk(SubmitApplication::DISK)->put($document->path, str_repeat('A', 1024 * 1024));
     }
 
-    $avant = memory_get_usage();
     $response = app(BuildApplicationArchive::class)($application);
+
+    $avant = memory_get_usage();
+    ob_start();
+    $response->sendContent();
+    $contenu = (string) ob_get_clean();
     $consomme = memory_get_usage() - $avant;
 
-    expect($response->getFile()->getSize())->toBeGreaterThan(0)
+    expect(strlen($contenu))->toBeGreaterThan(0)
         // Les 8 Mo ne transitent jamais par la mémoire du processus.
         ->and($consomme)->toBeLessThan(2 * 1024 * 1024);
 
+    $chemin = tempnam(sys_get_temp_dir(), 'ln-zip-');
+    file_put_contents($chemin, $contenu);
+
     $zip = new ZipArchive;
-    $zip->open($response->getFile()->getPathname());
+    $zip->open($chemin);
 
     expect($zip->numFiles)->toBe(8);
     $zip->close();
+    @unlink($chemin);
 });
 
 it('exclut du ZIP les pièces infectées', function () {
@@ -204,11 +212,17 @@ it('exclut du ZIP les pièces infectées', function () {
 
     $response = app(BuildApplicationArchive::class)($application);
 
+    ob_start();
+    $response->sendContent();
+    $chemin = tempnam(sys_get_temp_dir(), 'ln-zip-');
+    file_put_contents($chemin, (string) ob_get_clean());
+
     $zip = new ZipArchive;
-    $zip->open($response->getFile()->getPathname());
+    $zip->open($chemin);
 
     expect($zip->numFiles)->toBe(1);
     $zip->close();
+    @unlink($chemin);
 });
 
 it('refuse de construire une archive vide', function () {

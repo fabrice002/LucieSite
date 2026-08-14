@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Les proxies de confiance sont déclarés dans AppServiceProvider, à
+        // partir de config/proxies.php : lire env() ici renverrait null dès que
+        // la configuration est mise en cache, ce qui est le cas en production.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
