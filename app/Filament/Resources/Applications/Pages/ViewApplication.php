@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Applications\Pages;
 
 use App\Actions\BuildApplicationArchive;
+use App\Filament\Resources\Applications\Actions\NotifyApplicantAction;
 use App\Filament\Resources\Applications\ApplicationResource;
 use App\Models\Application;
 use Filament\Actions\Action;
@@ -19,6 +20,8 @@ class ViewApplication extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            NotifyApplicantAction::make(),
+
             Action::make('archive')
                 ->label('Télécharger tous les documents')
                 ->icon('heroicon-o-archive-box-arrow-down')

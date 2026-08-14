@@ -3,7 +3,10 @@
 namespace App\Filament\Resources\Applications\Schemas;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\DocumentScanStatus;
+use App\Enums\DocumentType;
 use App\Models\Application;
+use App\Models\Document;
 use App\Support\ApplicationHistory;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -55,12 +58,12 @@ class ApplicationInfolist
                 ->schema([
                     RepeatableEntry::make('documents')
                         ->hiddenLabel()
-                        ->columns(4)
+                        ->columns(5)
                         ->schema([
                             TextEntry::make('type')
                                 ->label('Type')
                                 ->badge()
-                                ->formatStateUsing(fn ($state): string => $state->label()),
+                                ->formatStateUsing(fn (DocumentType $state): string => $state->label()),
 
                             TextEntry::make('original_name')->label('Nom du fichier'),
 
@@ -68,13 +71,62 @@ class ApplicationInfolist
                                 ->label('Taille')
                                 ->formatStateUsing(fn (int $state): string => self::poids($state)),
 
+                            TextEntry::make('scan_status')
+                                ->label('Analyse')
+                                ->badge()
+                                ->formatStateUsing(fn (DocumentScanStatus $state): string => $state->label())
+                                ->color(fn (DocumentScanStatus $state): string => $state->color()),
+
+                            // Aucune prévisualisation : un PDF peut porter du
+                            // code. Le seul geste possible est le téléchargement,
+                            // et il n'ouvre pas d'onglet.
                             TextEntry::make('id')
                                 ->label('')
-                                ->formatStateUsing(fn (): string => 'Télécharger')
                                 ->badge()
-                                ->color('primary')
-                                ->url(fn ($record): string => route('documents.download', $record))
-                                ->openUrlInNewTab(),
+                                ->formatStateUsing(fn (Document $record): string => $record->isDownloadable()
+                                    ? 'Télécharger'
+                                    : 'Bloqué')
+                                ->color(fn (Document $record): string => $record->isDownloadable() ? 'primary' : 'danger')
+                                ->url(fn (Document $record): ?string => $record->isDownloadable()
+                                    ? route('documents.download', $record)
+                                    : null),
+                        ]),
+                ]),
+
+            Section::make('Mises à jour communiquées au candidat')
+                ->description('Ces messages sont lisibles sur la page de suivi, après saisie de la référence et de l\'adresse e-mail.')
+                ->collapsible()
+                ->schema([
+                    RepeatableEntry::make('updates')
+                        ->hiddenLabel()
+                        ->placeholder('Aucune mise à jour communiquée pour l\'instant.')
+                        ->columns(4)
+                        ->schema([
+                            TextEntry::make('created_at')
+                                ->label('Date')
+                                ->dateTime('j M Y à H:i'),
+
+                            TextEntry::make('author.name')
+                                ->label('Auteur')
+                                ->placeholder('Compte supprimé'),
+
+                            TextEntry::make('status')
+                                ->label('Statut')
+                                ->badge()
+                                ->placeholder('Inchangé')
+                                ->formatStateUsing(fn (ApplicationStatus $state): string => $state->label())
+                                ->color(fn (ApplicationStatus $state): string => $state->color()),
+
+                            TextEntry::make('email_sent')
+                                ->label('Alerte e-mail')
+                                ->badge()
+                                ->formatStateUsing(fn (bool $state): string => $state ? 'E-mail envoyé' : 'Non envoyé')
+                                ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+
+                            TextEntry::make('public_message')
+                                ->label('Message')
+                                ->placeholder('Aucun message : seul le statut a changé.')
+                                ->columnSpanFull(),
                         ]),
                 ]),
 

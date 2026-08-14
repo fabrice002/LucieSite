@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Enums\DocumentScanStatus;
 use App\Models\Application;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
@@ -11,6 +12,11 @@ use ZipArchive;
 /**
  * Assemble les documents d'un dossier dans une archive ZIP téléchargeable.
  *
+ * Un dossier peut contenir huit scans de 10 Mo. Les fichiers sont donc ajoutés
+ * par référence (addFile) et non par leur contenu : ZipArchive lit chaque
+ * fichier depuis le disque au moment de la compression, sans jamais charger
+ * l'ensemble en mémoire.
+ *
  * L'archive est écrite dans un fichier temporaire hors du disque public et
  * supprimée dès que la réponse a été envoyée.
  */
@@ -18,9 +24,18 @@ class BuildApplicationArchive
 {
     public function __invoke(Application $application): BinaryFileResponse
     {
-        $documents = $application->documents()->get();
+        // Un fichier infecté ne part pas, même noyé dans une archive.
+        $documents = $application->documents()
+            ->where('scan_status', '!=', DocumentScanStatus::Infecte)
+            ->get();
 
-        throw_if($documents->isEmpty(), new RuntimeException('Ce dossier ne contient aucun document.'));
+        throw_if($documents->isEmpty(), new RuntimeException('Ce dossier ne contient aucun document téléchargeable.'));
+
+        // Compresser huit scans prend du temps ; la requête ne doit pas être
+        // interrompue en cours de route par max_execution_time.
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
 
         $archivePath = tempnam(sys_get_temp_dir(), 'ln-archive-');
         throw_unless(is_string($archivePath), new RuntimeException('Impossible de créer l\'archive.'));
@@ -51,10 +66,12 @@ class BuildApplicationArchive
                 $this->assainir($document->downloadName()),
             );
 
-            $zip->addFromString($nom, (string) $disk->get($document->path));
+            // addFile, jamais addFromString : le contenu reste sur le disque
+            // et n'est lu qu'au moment de compresser.
+            $zip->addFile($disk->path($document->path), $nom);
         }
 
-        $zip->close();
+        throw_unless($zip->close(), new RuntimeException('Impossible de finaliser l\'archive.'));
 
         return response()
             ->download($archivePath, $application->reference.'.zip', [

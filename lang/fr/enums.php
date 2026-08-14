@@ -20,6 +20,13 @@ return [
         'rejete' => 'Rejeté',
     ],
 
+    'document_scan_status' => [
+        'en_attente' => 'Analyse en attente',
+        'sain' => 'Fichier sain',
+        'infecte' => 'Fichier infecté',
+        'indisponible' => 'Analyse indisponible',
+    ],
+
     'document_type' => [
         'cv' => 'CV au format canadien',
         'tcf_tef' => 'Résultat TCF / TEF',

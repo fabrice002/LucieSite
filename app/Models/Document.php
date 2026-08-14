@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentScanStatus;
 use App\Enums\DocumentType;
 use App\Policies\DocumentPolicy;
 use Database\Factories\DocumentFactory;
@@ -20,6 +21,8 @@ use Illuminate\Support\Carbon;
  * @property string $path
  * @property string $mime_type
  * @property int $size
+ * @property DocumentScanStatus $scan_status
+ * @property Carbon|null $scanned_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Application $application
@@ -48,7 +51,20 @@ class Document extends Model
         return [
             'type' => DocumentType::class,
             'size' => 'integer',
+            'scan_status' => DocumentScanStatus::class,
+            'scanned_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Determine whether the document may be handed over.
+     *
+     * Un fichier reconnu infecté ne sort pas du serveur, ni par la route de
+     * téléchargement, ni dans une archive ZIP.
+     */
+    public function isDownloadable(): bool
+    {
+        return $this->scan_status->allowsDownload();
     }
 
     /**

@@ -231,6 +231,38 @@ Les contrôleurs orchestrent, la logique vit dans `app/Actions` :
 | `GenerateApplicationReference` | Génère `LN-2026-00147` |
 | `BuildApplicationArchive` | Assemble les documents en ZIP |
 | `PurgeExpiredApplications` | Efface les dossiers supprimés depuis 90 jours |
+| `NotifyApplicant` | Informe le candidat : statut, message, alerte e-mail |
+
+### Informer un candidat
+
+Depuis la fiche d'un dossier, **« Informer le candidat »** ouvre une fenêtre où
+l'on choisit le nouveau statut, un message à son intention, et si une alerte
+e-mail doit partir.
+
+Le principe de circulation de l'information est délibéré :
+
+- **L'e-mail n'est qu'une alerte.** Il contient la référence, le nouveau statut
+  et un lien vers la page de suivi. Il ne contient **jamais** le message rédigé
+  par le cabinet, aucun document, aucune note interne, et aucun lien de
+  connexion automatique.
+- **Le message se lit uniquement sur la plateforme**, après saisie de la
+  référence et de l'adresse e-mail sur `/suivre-mon-dossier`.
+
+Une boîte e-mail peut être partagée, consultée sur un téléphone prêté ou
+compromise : le contenu sensible reste derrière cette vérification.
+
+Les messages sont conservés dans la table **`application_updates`**.
+`applications.status` reste la source de vérité du statut courant ; chaque mise
+à jour porteuse d'un statut le met à jour dans la même transaction.
+`internal_notes` reste strictement privé et n'apparaît nulle part côté candidat.
+
+Les modèles de message proposés se modifient dans **Textes du site**, bloc
+« Suivre mon dossier », sous les clés `modele_*`. Les textes de l'e-mail sont
+dans le bloc « E-mail — Votre dossier a été mis à jour ».
+
+> Un bandeau rouge apparaît sur le tableau de bord des comptes `admin` lorsqu'un
+> e-mail attend depuis plus de dix minutes : c'est le signe que le worker est
+> arrêté et que les candidats ne sont pas prévenus.
 
 ---
 
@@ -254,6 +286,16 @@ négociables.
    fichiers compris.
 7. L'inscription publique est **désactivée**. Les comptes se créent en console.
 8. L'accès au back-office exige un **e-mail vérifié et un rôle**.
+9. Les documents sont **toujours servis en pièce jointe**, avec
+   `X-Content-Type-Options: nosniff`, `Content-Security-Policy: default-src 'none'`
+   et un type générique. Aucune prévisualisation n'existe dans le back-office :
+   un PDF légitimement formé peut porter du code, il ne doit jamais être rendu
+   par le navigateur.
+10. Les pièces déposées passent par **ClamAV** (`DOCUMENT_SCAN_ENABLED`).
+    L'analyse est **dégradable** : antivirus absent ou en panne ne bloque aucun
+    dépôt. Seul un fichier formellement reconnu infecté est retenu — son
+    téléchargement est refusé, le dossier passe en « incomplet » et les comptes
+    `admin` sont alertés. Voir `DEPLOIEMENT.md` pour l'installation.
 
 ### Limiteurs de débit
 

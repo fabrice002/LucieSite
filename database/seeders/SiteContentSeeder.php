@@ -278,6 +278,32 @@ class SiteContentSeeder extends Seeder
                     'resultat_maj' => 'Dernière mise à jour',
                     'introuvable' => 'Aucun dossier ne correspond à cette référence et à cette adresse e-mail.',
                     'aide_contact' => self::TODO,
+
+                    'messages_titre' => 'Messages du cabinet',
+                    'messages_vide' => 'Aucun message pour le moment. Vous serez prévenu par e-mail dès que votre dossier évoluera.',
+
+                    // Modèles proposés dans le back-office au moment d'informer
+                    // le candidat. L'administratrice peut les modifier avant envoi.
+                    'modele_nouveau' => 'Nous avons bien reçu votre dossier et nous vous en remercions. Il sera étudié dans les meilleurs délais.',
+                    'modele_en_cours' => 'Votre dossier est en cours d\'étude par notre équipe. Nous revenons vers vous dès que cette étape est terminée.',
+                    'modele_incomplet' => 'Après examen, il manque une ou plusieurs pièces à votre dossier. Merci de nous les faire parvenir afin que nous puissions poursuivre son traitement.',
+                    'modele_valide' => 'Votre dossier est complet et a été validé. Nous vous recontactons prochainement pour la suite de votre démarche.',
+                    'modele_rejete' => 'Après examen attentif, nous ne sommes pas en mesure de donner suite à votre dossier en l\'état.',
+                ],
+            ],
+
+            'email_suivi' => [
+                'label' => 'E-mail « Votre dossier a été mis à jour »',
+                'content' => [
+                    'objet' => 'Votre dossier :reference a été mis à jour',
+                    'salutation' => 'Bonjour :prenom,',
+                    'intro' => 'L\'état de votre dossier vient d\'évoluer.',
+                    'ligne_reference' => 'Référence :',
+                    'ligne_statut' => 'Nouvel état :',
+                    'invitation' => 'Connectez-vous à la page de suivi avec votre référence et votre adresse e-mail pour consulter le détail.',
+                    'bouton' => 'Consulter mon dossier',
+                    'rappel_securite' => 'Par sécurité, aucun détail de votre dossier n\'est transmis par e-mail.',
+                    'signature' => 'L\'équipe LN Immigration',
                 ],
             ],
 

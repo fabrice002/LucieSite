@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Enums\DocumentType;
+use App\Jobs\ScanUploadedDocument;
 use App\Models\Application;
 use App\Notifications\ApplicationReceived;
 use App\Notifications\ApplicationSubmitted;
@@ -62,9 +63,23 @@ class SubmitApplication
             throw $exception;
         }
 
+        $this->scanDocuments($application);
         $this->notify($application);
 
         return $application;
+    }
+
+    /**
+     * Soumet chaque pièce à l'analyse antivirus, en file d'attente.
+     *
+     * Le candidat n'attend pas : son dossier est déjà enregistré. Si ClamAV est
+     * absent, le job marque simplement l'analyse comme indisponible.
+     */
+    private function scanDocuments(Application $application): void
+    {
+        foreach ($application->documents as $document) {
+            ScanUploadedDocument::dispatch($document)->afterCommit();
+        }
     }
 
     /**

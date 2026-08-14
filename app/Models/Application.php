@@ -36,6 +36,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property-read string $full_name
  * @property-read Collection<int, Document> $documents
  * @property-read int|null $documents_count
+ * @property-read Collection<int, ApplicationUpdate> $updates
+ * @property-read int|null $updates_count
  */
 // L'identifiant numérique n'est jamais exposé : on route sur la référence.
 #[RouteKey('reference')]
@@ -98,6 +100,18 @@ class Application extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
+    }
+
+    /**
+     * Get the updates communicated to the candidate, most recent first.
+     *
+     * @return HasMany<ApplicationUpdate, $this>
+     */
+    public function updates(): HasMany
+    {
+        return $this->hasMany(ApplicationUpdate::class)
+            ->latest('created_at')
+            ->latest('id');
     }
 
     /**

@@ -2,6 +2,7 @@
     $searched = $searched ?? false;
     $status = $status ?? null;
     $updatedAt = $updatedAt ?? null;
+    $messages = $messages ?? collect();
     $inputClass = 'mt-1 block w-full rounded-md border border-line bg-surface-raised px-3 py-2 text-base text-ink shadow-sm focus:border-brand focus:ring-2 focus:ring-brand-line focus:outline-none';
 @endphp
 
@@ -70,6 +71,40 @@
                             </dd>
                         </div>
                     </dl>
+                </div>
+
+                {{-- Les messages du cabinet. Rien d'autre : ni notes internes,
+                     ni identité de l'agent, ni liste des documents. --}}
+                <div class="mt-8">
+                    <h2 class="text-lg font-semibold text-ink-strong">
+                        {{ content('suivi.messages_titre', 'Messages du cabinet') }}
+                    </h2>
+
+                    @if ($messages->isEmpty())
+                        <p class="mt-3 text-sm leading-relaxed text-ink-muted">
+                            {{ content('suivi.messages_vide') }}
+                        </p>
+                    @else
+                        <ol class="mt-4 space-y-4">
+                            @foreach ($messages as $message)
+                                <li class="rounded-xl border border-line bg-surface-raised p-5">
+                                    <div class="flex flex-wrap items-center gap-3">
+                                        <time class="text-sm text-ink-muted" datetime="{{ $message->created_at?->toDateString() }}">
+                                            {{ $message->created_at?->translatedFormat('j F Y') }}
+                                        </time>
+
+                                        @if ($message->status)
+                                            <span class="rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand-text">
+                                                {{ $message->status->label() }}
+                                            </span>
+                                        @endif
+                                    </div>
+
+                                    <p class="mt-3 leading-relaxed whitespace-pre-line text-ink">{{ $message->public_message }}</p>
+                                </li>
+                            @endforeach
+                        </ol>
+                    @endif
                 </div>
             @else
                 <div role="status" class="mt-10 rounded-xl border border-notice-line bg-notice p-6">

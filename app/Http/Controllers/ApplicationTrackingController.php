@@ -19,9 +19,10 @@ class ApplicationTrackingController extends Controller
     /**
      * Look up an application from its reference and email address.
      *
-     * Seuls le statut et la date de mise à jour sont exposés : aucun document,
-     * aucune note interne. Une référence inconnue et une référence dont l'e-mail
-     * ne correspond pas produisent exactement la même réponse.
+     * Seuls le statut, la date et les messages adressés au candidat sont
+     * exposés : aucun document, aucune note interne, aucune identité d'agent.
+     * Une référence inconnue et une référence dont l'e-mail ne correspond pas
+     * produisent exactement la même réponse.
      */
     public function show(TrackApplicationRequest $request): View
     {
@@ -34,6 +35,12 @@ class ApplicationTrackingController extends Controller
             'searched' => true,
             'status' => $application?->status,
             'updatedAt' => $application?->updated_at,
+            // Les mises à jour sans message n'ont rien à montrer ici.
+            'messages' => $application
+                ?->updates()
+                ->visibleByApplicant()
+                ->get(['id', 'status', 'public_message', 'created_at'])
+                ?? collect(),
         ]);
     }
 }

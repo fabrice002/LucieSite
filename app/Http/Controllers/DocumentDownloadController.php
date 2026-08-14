@@ -11,6 +11,28 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class DocumentDownloadController extends Controller
 {
     /**
+     * En-têtes qui empêchent le navigateur d'exécuter quoi que ce soit.
+     *
+     * La règle « mimes » rejette un exécutable renommé, mais pas un PDF
+     * légitimement formé porteur de JavaScript, ni une image SVG contenant un
+     * script. Ces fichiers sont ouverts chaque jour par le cabinet : ils
+     * doivent être téléchargés, jamais rendus dans l'onglet.
+     *
+     * @var array<string, string>
+     */
+    private const HEADERS = [
+        // Le navigateur ne devine pas le type : il prend celui qu'on annonce.
+        'X-Content-Type-Options' => 'nosniff',
+        // Aucune ressource ne peut être chargée si le fichier était rendu.
+        'Content-Security-Policy' => "default-src 'none'; sandbox",
+        // L'URL du document ne fuit pas vers un site tiers.
+        'Referrer-Policy' => 'no-referrer',
+        // Jamais en cache partagé : ces fichiers sont nominatifs.
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, private',
+        'X-Frame-Options' => 'DENY',
+    ];
+
+    /**
      * Stream a candidate document from the private disk.
      *
      * La route est authentifiée et protégée par DocumentPolicy : le fichier
@@ -19,6 +41,9 @@ class DocumentDownloadController extends Controller
     public function __invoke(Document $document): StreamedResponse
     {
         Gate::authorize('view', $document);
+
+        // Un fichier reconnu infecté ne sort pas du serveur.
+        abort_unless($document->isDownloadable(), 403, 'Ce fichier a été détecté comme infecté.');
 
         $disk = Storage::disk(SubmitApplication::DISK);
 
@@ -36,6 +61,16 @@ class DocumentDownloadController extends Controller
             ])
             ->log('Document téléchargé');
 
-        return $disk->download($document->path, $document->downloadName());
+        // download() pose déjà « Content-Disposition: attachment ».
+        return $disk->download(
+            $document->path,
+            $document->downloadName(),
+            [
+                ...self::HEADERS,
+                // Type générique : le navigateur n'a aucune raison de tenter
+                // un rendu, même si l'en-tête de disposition était ignoré.
+                'Content-Type' => 'application/octet-stream',
+            ],
+        );
     }
 }

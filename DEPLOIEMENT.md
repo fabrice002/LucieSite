@@ -64,6 +64,52 @@ LimitRequestBody 62914560
 - Redis (files d'attente et cache)
 - Certificat TLS valide — le site transporte des pièces d'identité
 
+### ClamAV — analyse antivirus des pièces déposées
+
+La validation `mimes` rejette un exécutable renommé, mais pas un PDF
+légitimement formé porteur de JavaScript. Ces fichiers sont ouverts chaque jour
+par l'administratrice : ClamAV apporte une seconde barrière.
+
+```bash
+sudo apt install clamav clamav-daemon
+sudo systemctl enable --now clamav-freshclam clamav-daemon
+```
+
+Le worker doit pouvoir lire les fichiers analysés :
+
+```bash
+sudo usermod -a -G www-data clamav
+sudo chmod 750 /var/www/ln-immigration/storage/app/private
+```
+
+Puis dans `.env` :
+
+```dotenv
+DOCUMENT_SCAN_ENABLED=true
+DOCUMENT_SCAN_COMMAND=clamdscan
+```
+
+Vérification :
+
+```bash
+which clamdscan
+clamdscan --version
+# Fichier de test EICAR, inoffensif, reconnu par tous les antivirus
+curl -s https://secure.eicar.org/eicar.com -o /tmp/eicar.txt && clamdscan --fdpass /tmp/eicar.txt
+```
+
+> **L'analyse est volontairement dégradable.** ClamAV absent, arrêté ou trop
+> lent ne bloque aucun dépôt : la pièce est marquée « Analyse indisponible » et
+> reste téléchargeable. Un antivirus en panne ne doit jamais empêcher un
+> candidat de déposer son dossier, ni le cabinet de travailler.
+>
+> Seul un fichier **formellement reconnu infecté** est bloqué : le
+> téléchargement est refusé, le dossier passe au statut « incomplet » et les
+> comptes `admin` reçoivent une alerte.
+>
+> Surveillez la proportion de pièces « Analyse indisponible » dans le
+> back-office : au-delà de quelques cas, c'est que ClamAV ne répond plus.
+
 ---
 
 ## 2. Déploiement
@@ -159,6 +205,9 @@ supervisorctl reread && supervisorctl update && supervisorctl start ln-worker:*
 - [ ] `https://votre-domaine/storage/documents/...` renvoie 403 ou 404
 - [ ] `/register` renvoie 404
 - [ ] Un compte sans rôle est refusé sur `/admin`
+- [ ] `DOCUMENT_SCAN_ENABLED=true` et `clamdscan --version` répond
+- [ ] Un document téléchargé depuis `/admin` arrive en **pièce jointe**,
+      jamais rendu dans l'onglet (vérifier l'en-tête `Content-Disposition`)
 - [ ] Double authentification activée sur le compte de l'administratrice
 - [ ] Certificat TLS valide, redirection HTTP → HTTPS
 
