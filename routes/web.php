@@ -17,10 +17,11 @@ Route::view('/', 'public.accueil')->name('home');
 
 // Pages vitrines. Tous leurs textes viennent de la table site_contents et sont
 // modifiables depuis le back-office.
-Route::view('services', 'public.services')->name('services');
+Route::get('services', [PublicPageController::class, 'services'])->name('services');
+Route::get('services/{service}', [PublicPageController::class, 'service'])->name('services.show');
 Route::view('a-propos', 'public.a-propos')->name('a-propos');
 Route::get('temoignages', [PublicPageController::class, 'testimonials'])->name('temoignages');
-Route::view('faq', 'public.faq')->name('faq');
+Route::get('faq', [PublicPageController::class, 'faq'])->name('faq');
 Route::view('contact', 'public.contact')->name('contact');
 Route::view('mentions-legales', 'public.mentions-legales')->name('mentions-legales');
 Route::view('politique-de-confidentialite', 'public.confidentialite')->name('confidentialite');

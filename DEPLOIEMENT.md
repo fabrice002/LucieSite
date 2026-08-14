@@ -152,6 +152,7 @@ php artisan key:generate
 php artisan migrate --force
 php artisan db:seed --class=RoleSeeder --force
 php artisan db:seed --class=SiteContentSeeder --force
+php artisan db:seed --class=ContentSeeder --force
 php artisan storage:link
 
 php artisan config:cache
@@ -353,10 +354,19 @@ combinez l'IP et l'adresse e-mail. La ligne exacte figure en commentaire dans
       voir `proxy_buffering off` en section 4
 - [ ] **Test sur un vrai téléphone Android en 3G** : dépôt avec deux scans
       photographiés, coupure du réseau en cours d'envoi, puis reprise
+- [ ] **Charger chaque page publique deux fois de suite**, après
+      `php artisan cache:clear`. Le premier appel remplit le cache, le second le
+      relit : un contenu mal mis en cache passe au premier appel et tombe en 500
+      au second. À faire après toute mise en production qui touche au contenu.
 
 ### Contenu
 
 - [ ] Plus aucun `[À COMPLÉTER PAR LA CLIENTE]` sur le site
+- [ ] Services publiés depuis **Contenu du site › Services** — un service non
+      publié renvoie 404 et reste hors du plan du site
+- [ ] Questions fréquentes publiées, thème par thème
+- [ ] Blocs de page publiés : livrés dépubliés car ils portent des placeholders
+- [ ] Bloc « chiffres » : **vide, ou uniquement des données vérifiables**
 - [ ] Mentions légales et politique de confidentialité rédigées
 - [ ] Coordonnées du cabinet renseignées
 - [ ] Logo définitif en place (`resources/views/components/app-logo-icon.blade.php`,
@@ -466,6 +476,7 @@ composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan migrate --force
 php artisan db:seed --class=SiteContentSeeder --force   # ajoute les nouvelles clés
+php artisan db:seed --class=ContentSeeder --force       # ajoute les contenus absents
 
 php artisan config:cache && php artisan route:cache && php artisan view:cache
 php artisan queue:restart
@@ -473,8 +484,8 @@ php artisan queue:restart
 php artisan up
 ```
 
-> `SiteContentSeeder` n'écrase jamais un texte modifié depuis le back-office :
-> il ajoute uniquement les clés absentes.
+> `SiteContentSeeder` et `ContentSeeder` n'écrasent jamais ce qui a été modifié
+> depuis le back-office : ils ajoutent uniquement ce qui manque.
 
 > `queue:restart` est **indispensable** : sans lui, les workers gardent
 > l'ancien code en mémoire et continuent de l'exécuter.

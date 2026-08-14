@@ -54,7 +54,12 @@
         </ol>
     </section>
 
+    {{-- Blocs libres composés depuis le back-office. --}}
+    <x-page-sections page="accueil" />
+
     {{-- Services --}}
+    @php $services = App\Models\Service::publiés(); @endphp
+
     <section class="border-y border-line bg-surface-muted">
         <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
             <h2 class="text-2xl font-bold tracking-tight text-ink-strong sm:text-3xl">
@@ -64,6 +69,28 @@
             <p class="mt-4 max-w-3xl leading-relaxed text-ink-muted">
                 {{ content('accueil.section_services_intro') }}
             </p>
+
+            @if ($services->isNotEmpty())
+                <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($services->take(6) as $service)
+                        <article class="flex flex-col rounded-xl border border-line bg-surface-raised p-6 transition hover:border-brand">
+                            @if ($service->highlight)
+                                <span class="mb-3 self-start rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand-text">
+                                    {{ $service->highlight }}
+                                </span>
+                            @endif
+
+                            <h3 class="font-semibold text-ink-strong">
+                                <a href="{{ route('services.show', $service) }}" class="hover:text-brand-text">
+                                    {{ $service->title }}
+                                </a>
+                            </h3>
+
+                            <p class="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">{{ $service->summary }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            @endif
 
             <a href="{{ route('services') }}"
                class="mt-6 inline-block font-medium text-brand-text hover:underline">

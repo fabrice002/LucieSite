@@ -155,6 +155,7 @@ le worker** — il garde l'ancienne configuration en mémoire.
 |---|---|
 | `/` | Accueil |
 | `/services`, `/a-propos`, `/temoignages`, `/faq`, `/contact` | Pages vitrines |
+| `/services/{slug}` | Fiche d'un service — 404 tant qu'il n'est pas publié |
 | `/deposer-mon-dossier` | Formulaire de dépôt |
 | `/dossier-recu` | Confirmation, affiche la référence de suivi |
 | `/suivre-mon-dossier` | Suivi par référence + e-mail |
@@ -172,6 +173,10 @@ Tout est réuni sous **`/admin`**. Il n'existe pas d'autre espace authentifié :
 | Dossiers | Table, filtres, vue détail, statuts, export ZIP | admin, agent |
 | Témoignages | CRUD, photo, publication, réordonnancement | admin |
 | Textes du site | Édition de tous les textes publics | admin |
+| Contenu du site › Services | Fiches de programmes, image, publication, ordre | admin |
+| Contenu du site › Questions fréquentes | Thèmes et questions, publication, ordre | admin |
+| Contenu du site › Blocs de page | Composition des pages, bloc par bloc | admin |
+| Contenu du site › Équipe | Membres présentés sur « À propos » | admin |
 | Comptes et rôles | Création de comptes, attribution des rôles | admin |
 | Mon profil / Sécurité | Nom, e-mail, mot de passe, double authentification | admin, agent |
 
@@ -235,6 +240,10 @@ identique dans les pages et dans l'onglet.
 | `application_updates` | Messages adressés au candidat | Lisibles sur la page de suivi. `applications.status` reste la source de vérité du statut |
 | `testimonials` | Témoignages | Créés uniquement depuis le back-office. `photo_path` sur le disque **public** — le seul fichier qui y va |
 | `site_contents` | Tous les textes publics | JSON à plat, unique sur `(key, locale)`. Ajouter une langue = insérer des lignes |
+| `services` | Une fiche de programme | `slug` unique et exposé à la place de l'`id`. Non publié = absent des listes, du plan du site, et 404 sur sa fiche |
+| `faq_categories` / `faqs` | Thèmes et questions | Un thème dépublié masque ses questions ; un thème sans question publiée n'apparaît pas |
+| `page_sections` | Blocs empilables d'une page | `type` en **chaîne**, pas en enum : un type retiré du code est ignoré, jamais une page cassée. `data` en JSON, sa forme dépend du type |
+| `team_members` | Membres présentés sur « À propos » | La section entière disparaît si personne n'est publié |
 | `users` | Comptes du cabinet | Aucun compte candidat. `must_change_password` pour les mots de passe provisoires |
 | `activity_log` | Journal | Dépôts, changements de statut, téléchargements, effacements |
 
@@ -256,6 +265,58 @@ php artisan db:seed --class=SiteContentSeeder
 ```
 
 Le cache est invalidé automatiquement à chaque sauvegarde (`SiteContentObserver`).
+
+### Contenu structuré : services, FAQ, blocs de page, équipe
+
+Au-delà des textes, quatre contenus se gèrent depuis **Contenu du site** sans
+toucher au code. Aucun plafond n'est codé : la cliente ajoute autant de
+services, de questions, de blocs ou de membres qu'elle veut.
+
+Une page publique se compose en empilant des **blocs**. Neuf types existent
+(`App\Enums\SectionType`) : bannière, texte + image, cartes, étapes, chiffres,
+galerie, citation, appel à l'action, logos. Le formulaire du back-office change
+selon le type choisi, l'administratrice ne voit jamais de JSON.
+
+```blade
+<x-page-sections page="accueil" />
+```
+
+Ajouter un type de bloc tient en trois gestes :
+
+1. une valeur dans `App\Enums\SectionType`
+2. la liste de ses champs dans `App\Filament\Forms\SectionBlocks::pour()`
+3. un partial `resources/views/sections/<valeur>.blade.php`
+
+Le champ `type` est stocké en **chaîne, jamais casté en enum** : un type retiré
+du code doit rendre le bloc invisible, pas faire tomber la page. La lecture
+passe par `PageSection::sectionType()`, qui renvoie `null` si le type est
+inconnu.
+
+#### Ce qui transite par le cache
+
+Les listes publiées sont mises en cache et invalidées à chaque écriture
+(`App\Models\Concerns\CachesPublicContent`). **Seuls des tableaux d'attributs
+bruts y entrent, jamais des objets.** Laravel fixe `cache.serializable_classes`
+à `false` : aucune classe PHP n'est désérialisée depuis le cache, ce qui ferme
+les chaînes de gadgets si l'`APP_KEY` fuite.
+
+Un modèle Eloquent mis en cache reviendrait donc en `__PHP_Incomplete_Class` au
+deuxième appel — page blanche en 500, invisible en développement tant que le
+cache reste froid. Le motif à suivre est toujours le même : mettre en cache
+`getAttributes()`, réhydrater avec `hydrate()` à la lecture, et reconstruire les
+relations à la main (`setRelation`), qu'`hydrate()` ne restitue pas.
+
+> La suite de tests tourne par défaut sur le store `array`, qui ne sérialise
+> rien et ne verrait pas ce défaut. `tests/Feature/PublicContentCacheTest.php`
+> force un store aux mêmes règles que la production — laissez-le en place.
+
+Le contenu de départ vient de `ContentSeeder`, qui ne réécrit jamais l'existant.
+Les blocs et les services y sont livrés **non publiés** : ils portent des
+placeholders `[À COMPLÉTER PAR LA CLIENTE]`, qui n'ont rien à faire en ligne.
+
+```bash
+php artisan db:seed --class=ContentSeeder
+```
 
 ### Logique métier
 
