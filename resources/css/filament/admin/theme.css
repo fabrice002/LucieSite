@@ -1,0 +1,35 @@
+/*
+ | Thème du back-office.
+ |
+ | Sans ce fichier, Filament sert sa feuille précompilée : elle contient ses
+ | propres composants, mais aucun utilitaire Tailwind que nous écririons dans
+ | nos vues. Une classe « size-5 » posée sur une icône n'existait alors nulle
+ | part, et le SVG s'affichait à sa taille intrinsèque — d'où un pictogramme
+ | d'avertissement occupant la moitié de l'écran.
+ |
+ | En important le thème de Filament et en déclarant nos sources, les vues du
+ | back-office se stylisent comme le reste du projet.
+ */
+
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+/* Nos vues et classes PHP du back-office : c'est là que Tailwind va chercher
+   les utilitaires à générer. */
+@source '../../../../app/Filament';
+@source '../../../../resources/views/filament';
+@source '../../../../resources/views/components/app-logo-icon.blade.php';
+
+/* Bascule entre logo clair et logo sombre.
+   Reprise de public.css : le composant x-app-logo-icon sert aussi la marque du
+   panel, et ces classes ne sont pas des utilitaires Tailwind. */
+.marque-sombre {
+    display: none;
+}
+
+.dark .marque-clair {
+    display: none;
+}
+
+.dark .marque-sombre {
+    display: block;
+}

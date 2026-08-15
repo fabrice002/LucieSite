@@ -386,6 +386,11 @@ combinez l'IP et l'adresse e-mail. La ligne exacte figure en commentaire dans
       dossiers attendraient indéfiniment une décision que personne ne verrait
 - [ ] `php artisan ln:purge-applications --dry-run` exécuté une fois : vérifier
       que le nombre de bascules annoncé correspond à ce qui est attendu
+- [ ] **Le back-office est correctement stylé** après le déploiement. Le panel
+      charge un thème compilé (`build/assets/theme-*.css`) : s'il manque, les
+      pages s'affichent avec les composants de Filament mais sans nos
+      utilitaires, et les icônes prennent toute la largeur. Relancer
+      `npm run build` suffit
 - [ ] Mentions légales et politique de confidentialité rédigées
 - [ ] Coordonnées du cabinet renseignées : adresse, téléphone, WhatsApp, e-mail,
       horaires. Vérifier que les liens `tel:`, `mailto:` et WhatsApp aboutissent
@@ -499,7 +504,7 @@ php artisan down --render="errors::503"
 
 git pull
 composer install --no-dev --optimize-autoloader
-npm ci && npm run build
+npm ci && npm run build   # compile aussi le thème du back-office
 php artisan migrate --force
 php artisan db:seed --class=SiteContentSeeder --force   # ajoute les nouvelles clés
 php artisan db:seed --class=ContentSeeder --force       # ajoute les contenus absents

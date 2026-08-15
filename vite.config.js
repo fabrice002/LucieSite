@@ -11,6 +11,9 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/public.css',
+                // Thème du back-office : sans lui, aucun utilitaire Tailwind
+                // écrit dans nos vues Filament n'existe dans le CSS servi.
+                'resources/css/filament/admin/theme.css',
                 'resources/js/app.js',
                 'resources/js/depot.js',
                 'resources/js/faq.js',

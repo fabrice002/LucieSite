@@ -191,6 +191,28 @@ la question à laquelle il répond, pas à la table qu'il manipule.
 > Les isoler du groupe « Contenu du site » n'aurait de sens que pour qui connaît
 > le schéma de la base.
 
+#### Styliser une vue du back-office
+
+Le panel utilise un **thème compilé par Vite**
+(`resources/css/filament/admin/theme.css`), et non la feuille précompilée de
+Filament. C'est ce qui permet d'écrire dans une vue Filament les mêmes classes
+Tailwind que partout ailleurs.
+
+Sans ce thème, une classe comme `size-5` n'existe **nulle part** dans la CSS
+servie au back-office : elle est simplement ignorée, et une icône SVG s'affiche
+à sa taille intrinsèque — c'est-à-dire aussi grande que son conteneur. Le
+symptôme est spectaculaire et la cause invisible.
+
+Le thème déclare ses sources :
+
+```css
+@source '../../../../app/Filament';
+@source '../../../../resources/views/filament';
+```
+
+**Une vue du back-office placée hors de ces chemins ne sera pas scannée**, et
+ses classes n'existeront pas. Ajoutez-y un `@source`, puis `npm run build`.
+
 **Rôles :**
 
 - `admin` — tous les droits, y compris les suppressions, les textes du site et

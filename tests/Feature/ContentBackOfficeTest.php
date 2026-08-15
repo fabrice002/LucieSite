@@ -118,14 +118,14 @@ it('ne montre à un agent que les témoignages, en lecture', function () {
         ->assertDontSee('Apparence');
 });
 
-it('affiche le logo du back-office à taille contrainte', function () {
-    // Le panel sert sa CSS précompilée : une classe Tailwind du site n'y
-    // existe pas. Sans dimension explicite, le monogramme recouvre la
-    // navigation. Les styles en ligne sont donc voulus, pas un oubli.
+it('sert au back-office un thème compilé, et non la feuille précompilée', function () {
+    // C'est l'invariant qui compte : sans ce thème, aucun utilitaire Tailwind
+    // écrit dans une vue du panel n'existe dans la CSS servie. Les icônes
+    // s'affichent alors à leur taille intrinsèque et recouvrent la page.
     $this->actingAs(personnelContenu('admin'))
         ->get('/admin')
         ->assertOk()
-        ->assertSee('width: 1rem', false);
+        ->assertSee('/build/assets/theme-', false);
 });
 
 it('refuse l\'accès au contenu à un agent', function (string $url) {

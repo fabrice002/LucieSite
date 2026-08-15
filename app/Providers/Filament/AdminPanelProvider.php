@@ -43,6 +43,10 @@ class AdminPanelProvider extends PanelProvider
             // requête, y compris par des commandes artisan qui tournent sans
             // base accessible. La lecture du réglage n'a lieu qu'au rendu.
             ->favicon(fn (): string => app(ThemePublic::class)->urlFavicon() ?? asset('favicon.svg'))
+            // Thème compilé par Vite plutôt que la feuille précompilée de
+            // Filament : nos vues du back-office peuvent alors employer les
+            // mêmes utilitaires Tailwind que le reste du projet.
+            ->viteTheme('resources/css/filament/admin/theme.css')
             // Page de profil native, rendue dans la mise en page du panel :
             // le nom, l'adresse e-mail et le mot de passe se modifient ici,
             // et la 2FA sur la page Sécurité juste à côté.
