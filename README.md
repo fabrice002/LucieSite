@@ -251,6 +251,62 @@ téléchargés au build : ajouter la famille dans `vite.config.js` **et** dans
 | `users` | Comptes du cabinet | Aucun compte candidat. `must_change_password` pour les mots de passe provisoires |
 | `activity_log` | Journal | Dépôts, changements de statut, téléchargements, effacements |
 
+### Jeu de démonstration et test sur téléphone
+
+Pour voir le site complet — toutes les pages publiées, des dossiers dans chaque
+statut, la file de conservation garnie — sans attendre que la cliente ait tout
+rédigé :
+
+```bash
+php artisan ln:demo --fresh    # base vierge, puis jeu complet
+php artisan ln:demo            # complète une base existante
+php artisan ln:demo --purge    # retire tout
+```
+
+Comptes créés : `admin@demo.test` et `agent@demo.test`, mot de passe
+`motdepasse`.
+
+Ce que le jeu contient : 6 services publiés avec périmètre et tarif, 4 thèmes de
+FAQ et 16 questions, 6 blocs de page, 4 membres d'équipe, 5 témoignages,
+une palette de couleurs, et ~25 dossiers avec leurs pièces **réellement écrites
+sur le disque privé** — un chemin en base sans fichier derrière donnerait un
+back-office qui a l'air de marcher jusqu'au premier téléchargement.
+
+**Deux garde-fous.** La commande refuse de tourner en production, et chaque
+enregistrement porte la marque `[DÉMO]` : rien ne peut être confondu avec du
+contenu réel, ni rester en ligne sans que cela saute aux yeux.
+
+Les **mentions légales et la politique de confidentialité gardent leurs
+placeholders**, même en démonstration. Raison sociale, immatriculation,
+hébergeur, autorité de contrôle : en inventer, fût-ce pour un essai, c'est
+risquer qu'elles partent en ligne telles quelles.
+
+#### Depuis un téléphone Android
+
+Les candidats déposent leur dossier depuis un Android en 3G. C'est la seule
+façon de voir ce que le site leur montre réellement.
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+`ln:demo` affiche l'adresse IP du poste. Reportez-la dans `.env` :
+
+```dotenv
+APP_URL=http://192.168.x.x:8000
+```
+
+puis `php artisan config:clear && npm run build`.
+
+> **`APP_URL` compte.** Les liens et les fichiers compilés en sont dérivés.
+> Laissé sur `localhost`, la page s'ouvre depuis le téléphone mais arrive sans
+> style ni JavaScript — l'upload en particulier ne fonctionnera pas.
+
+Pour brider le réseau : Chrome Android relié au poste via `chrome://inspect`,
+puis **Network → Slow 3G** dans les outils de développement. Testez au minimum
+un dépôt avec deux scans photographiés, une coupure réseau en cours d'envoi,
+puis la reprise.
+
 ### Conception des pages publiques
 
 La mise en page suit les conventions du secteur, qui ne sont pas décoratives :

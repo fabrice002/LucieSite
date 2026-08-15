@@ -13,8 +13,10 @@ use App\Filament\Resources\TeamMembers\Pages\ListTeamMembers;
 use App\Models\FaqCategory;
 use App\Models\PageSection;
 use App\Models\Service;
+use App\Models\SiteContent;
 use App\Models\TeamMember;
 use App\Models\User;
+use Database\Seeders\SiteContentSeeder;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 
@@ -50,6 +52,27 @@ it('ouvre les listes de contenu pour un admin', function (string $page) {
     'blocs de page' => ListPageSections::class,
     'équipe' => ListTeamMembers::class,
 ]);
+
+it('ne propose plus les champs remplacés par les tables dédiées', function () {
+    $this->seed(SiteContentSeeder::class);
+
+    // Services et questions ont leur propre table, en nombre libre. Laisser
+    // « Service 1 », « Question 1 »… dans Textes du site enverrait la cliente
+    // remplir des champs qui n'apparaissent nulle part.
+    foreach (['services', 'faq'] as $bloc) {
+        $cles = array_keys(SiteContent::query()->where('key', $bloc)->sole()->content);
+
+        expect($cles)->not->toContain('service_1_titre')
+            ->and($cles)->not->toContain('question_1')
+            ->and($cles)->not->toContain('reponse_1')
+            ->and($cles)->not->toContain('tarifs_texte');
+    }
+
+    // L'habillage de la page, lui, reste éditable.
+    $faq = SiteContent::query()->where('key', 'faq')->sole()->content;
+
+    expect($faq)->toHaveKeys(['titre', 'introduction', 'recherche_placeholder', 'vide', 'cta_titre']);
+});
 
 it('réunit les contenus sous « Contenu du site » dans la navigation', function () {
     $this->actingAs(personnelContenu('admin'))

@@ -20,6 +20,13 @@ class TestimonialFactory extends Factory
         return [
             'author_name' => fake()->name(),
             'author_country' => fake()->randomElement(['Cameroun', 'Canada', 'Côte d\'Ivoire', null]),
+            'author_programme' => fake()->randomElement([
+                'Entrée Express',
+                'PSTQ — Québec',
+                'Permis d\'études',
+                'Regroupement familial',
+                null,
+            ]),
             'content' => fake()->paragraph(),
             'photo_path' => null,
             'video_url' => null,

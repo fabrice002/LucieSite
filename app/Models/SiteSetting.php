@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Observers\SiteSettingObserver;
+use Database\Factories\SiteSettingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -25,6 +27,9 @@ use Illuminate\Support\Carbon;
 #[Fillable(['key', 'value', 'type'])]
 class SiteSetting extends Model
 {
+    /** @use HasFactory<SiteSettingFactory> */
+    use HasFactory;
+
     /**
      * Les natures de réglage, qui commandent la conversion à la lecture.
      */

@@ -25,6 +25,9 @@ class ServiceFactory extends Factory
             'title' => $titre,
             'summary' => fake()->sentence(15),
             'body' => '<p>'.fake()->paragraph().'</p>',
+            'price_note' => null,
+            'included' => null,
+            'excluded' => null,
             'image_path' => null,
             'image_alt' => null,
             'icon' => null,
@@ -39,5 +42,25 @@ class ServiceFactory extends Factory
     public function published(): static
     {
         return $this->state(fn (array $attributes) => ['is_published' => true]);
+    }
+
+    /**
+     * Un service dont le périmètre est renseigné, comme il devrait l'être.
+     */
+    public function avecPerimetre(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'price_note' => 'Sur devis, après évaluation du profil',
+            'included' => [
+                'Évaluation complète de votre profil',
+                'Constitution et vérification du dossier',
+                'Suivi jusqu\'à la décision',
+            ],
+            'excluded' => [
+                'Frais gouvernementaux et frais de visa',
+                'Traductions certifiées',
+                'Examens de langue (TCF, TEF, IELTS)',
+            ],
+        ]);
     }
 }

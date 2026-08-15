@@ -52,4 +52,31 @@ class ApplicationFactory extends Factory
             'deleted_at' => now()->subDays(120),
         ]);
     }
+
+    /**
+     * Un dossier dont l'échéance de conservation est déjà dépassée.
+     *
+     * L'observateur repousse l'échéance à chaque écriture : elle est donc
+     * repositionnée après création, sans toucher aux timestamps.
+     */
+    public function echu(): static
+    {
+        return $this->afterCreating(function (Application $application): void {
+            $application->timestamps = false;
+            $application->retention_due_at = now()->subDay();
+            $application->save();
+        });
+    }
+
+    /**
+     * Un dossier qui arrivera à échéance dans le nombre de jours indiqué.
+     */
+    public function echeanceDans(int $jours): static
+    {
+        return $this->afterCreating(function (Application $application) use ($jours): void {
+            $application->timestamps = false;
+            $application->retention_due_at = now()->addDays($jours);
+            $application->save();
+        });
+    }
 }

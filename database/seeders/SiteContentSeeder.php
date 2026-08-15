@@ -135,20 +135,9 @@ class SiteContentSeeder extends Seeder
                     'meta_description' => self::TODO,
                     'titre' => 'Nos services',
                     'introduction' => self::TODO,
-                    'service_1_titre' => self::TODO,
-                    'service_1_texte' => self::TODO,
-                    'service_2_titre' => self::TODO,
-                    'service_2_texte' => self::TODO,
-                    'service_3_titre' => self::TODO,
-                    'service_3_texte' => self::TODO,
-                    'service_4_titre' => self::TODO,
-                    'service_4_texte' => self::TODO,
-                    'service_5_titre' => self::TODO,
-                    'service_5_texte' => self::TODO,
-                    'service_6_titre' => self::TODO,
-                    'service_6_texte' => self::TODO,
-                    'tarifs_titre' => 'Nos tarifs',
-                    'tarifs_texte' => self::TODO,
+                    // Les services eux-mêmes vivent dans leur propre table, en
+                    // nombre libre : « Contenu du site › Services ». Ce bloc ne
+                    // porte plus que l'habillage de la page.
                     'carte_lien' => 'En savoir plus',
                     'retour' => 'Tous nos services',
                     // Périmètre de la prestation, sur la fiche de chaque
@@ -239,18 +228,15 @@ class SiteContentSeeder extends Seeder
                     'meta_description' => self::TODO,
                     'titre' => 'Questions fréquentes',
                     'introduction' => self::TODO,
-                    'question_1' => self::TODO,
-                    'reponse_1' => self::TODO,
-                    'question_2' => self::TODO,
-                    'reponse_2' => self::TODO,
-                    'question_3' => self::TODO,
-                    'reponse_3' => self::TODO,
-                    'question_4' => self::TODO,
-                    'reponse_4' => self::TODO,
-                    'question_5' => self::TODO,
-                    'reponse_5' => self::TODO,
-                    'question_6' => self::TODO,
-                    'reponse_6' => self::TODO,
+                    // Les questions vivent dans leur propre table, en nombre
+                    // libre : « Contenu du site › Questions fréquentes ». Ce
+                    // bloc ne porte que l'habillage de la page — titre, champ
+                    // de recherche, message quand rien n'est publié.
+                    'recherche_label' => 'Rechercher une question',
+                    'recherche_placeholder' => 'Rechercher une question…',
+                    'recherche_vide' => 'Aucune question ne correspond à votre recherche.',
+                    'lien_direct' => 'Lien direct vers cette question',
+                    'vide' => 'Les questions fréquentes seront publiées prochainement.',
                     'cta_titre' => 'Vous ne trouvez pas votre réponse ?',
                     'cta_bouton' => 'Nous contacter',
                 ],
