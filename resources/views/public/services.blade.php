@@ -18,37 +18,7 @@
         <section class="mx-auto max-w-6xl px-4 py-16 sm:px-6">
             <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($services as $service)
-                    <article class="flex flex-col overflow-hidden rounded-xl border border-line bg-surface-raised transition hover:border-brand">
-                        @if ($service->image_path)
-                            <x-content-image
-                                :chemin="$service->image_path"
-                                :alt="$service->image_alt ?? $service->title"
-                                :hauteur="450"
-                                class="h-44 w-full object-cover"
-                            />
-                        @endif
-
-                        <div class="flex flex-1 flex-col p-6">
-                            @if ($service->highlight)
-                                <span class="mb-3 self-start rounded-full bg-brand-soft px-3 py-1 text-xs font-medium text-brand-text">
-                                    {{ $service->highlight }}
-                                </span>
-                            @endif
-
-                            <h2 class="text-lg font-semibold text-ink-strong">
-                                <a href="{{ route('services.show', $service) }}" class="hover:text-brand-text">
-                                    {{ $service->title }}
-                                </a>
-                            </h2>
-
-                            <p class="mt-2 flex-1 text-sm leading-relaxed text-ink-muted">{{ $service->summary }}</p>
-
-                            <a href="{{ route('services.show', $service) }}"
-                               class="mt-4 self-start text-sm font-medium text-brand-text hover:underline">
-                                {{ content('services.lien_detail', 'En savoir plus') }} &rarr;
-                            </a>
-                        </div>
-                    </article>
+                    <x-service-card :service="$service" />
                 @endforeach
             </div>
         </section>

@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Securite;
 use App\Http\Middleware\EnsurePasswordHasBeenChanged;
+use App\Support\ThemePublic;
 use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -37,7 +38,10 @@ class AdminPanelProvider extends PanelProvider
             // Même marque que le site public : le logo vient du composant
             // x-app-logo-icon, qui lit config/brand.php.
             ->brandLogo(fn (): View => view('filament.brand'))
-            ->favicon(asset('favicon.svg'))
+            // Fermeture, et non valeur : le panel est construit à chaque
+            // requête, y compris par des commandes artisan qui tournent sans
+            // base accessible. La lecture du réglage n'a lieu qu'au rendu.
+            ->favicon(fn (): string => app(ThemePublic::class)->urlFavicon() ?? asset('favicon.svg'))
             // Page de profil native, rendue dans la mise en page du panel :
             // le nom, l'adresse e-mail et le mot de passe se modifient ici,
             // et la 2FA sur la page Sécurité juste à côté.

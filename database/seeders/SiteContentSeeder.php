@@ -78,7 +78,14 @@ class SiteContentSeeder extends Seeder
                     'footer_titre_contact' => 'Nous joindre',
                     'footer_adresse' => self::TODO,
                     'footer_telephone' => self::TODO,
+                    'footer_whatsapp' => self::TODO,
                     'footer_email' => self::TODO,
+                    'footer_horaires' => self::TODO,
+                    // À quel titre le cabinet intervient. Aucun agrément n'est
+                    // supposé : tant que ce n'est pas rédigé, rien ne s'affiche.
+                    'statut_professionnel' => self::TODO,
+                    'cta_secondaire' => 'Poser une question',
+                    'etape_prefixe' => 'Étape',
                     'footer_mentions' => 'Mentions légales',
                     'footer_confidentialite' => 'Politique de confidentialité',
                     'footer_copyright' => 'Tous droits réservés.',
@@ -93,22 +100,31 @@ class SiteContentSeeder extends Seeder
                     'hero_titre' => self::TODO,
                     'hero_sous_titre' => self::TODO,
                     'hero_bouton' => 'Déposer mon dossier',
-                    'hero_bouton_secondaire' => 'Suivre mon dossier',
+                    'hero_bouton_secondaire' => 'Poser une question',
+                    'hero_mention' => self::TODO,
+                    // Emplacement d'image : tant qu'aucune photo authentique
+                    // n'est fournie, un aplat de la charte est affiché. Jamais
+                    // d'image de banque.
+                    'hero_image' => self::TODO,
+                    'hero_image_alt' => self::TODO,
                     'section_services_titre' => 'Nos services',
                     'section_services_intro' => self::TODO,
                     'section_services_bouton' => 'Voir tous nos services',
                     'section_etapes_titre' => 'Comment ça se passe',
-                    'etape_1_titre' => 'Vous déposez votre dossier',
+                    'section_etapes_intro' => self::TODO,
+                    'etape_1_titre' => 'Nous évaluons votre profil',
                     'etape_1_texte' => self::TODO,
-                    'etape_2_titre' => "Nous l'étudions",
+                    'etape_2_titre' => 'Vous déposez votre dossier',
                     'etape_2_texte' => self::TODO,
-                    'etape_3_titre' => 'Nous vous accompagnons',
+                    'etape_3_titre' => 'Nous préparons et déposons la demande',
                     'etape_3_texte' => self::TODO,
+                    'etape_4_titre' => 'Nous suivons son avancement',
+                    'etape_4_texte' => self::TODO,
                     'section_temoignages_titre' => 'Ils nous ont fait confiance',
                     'section_temoignages_bouton' => 'Lire tous les témoignages',
                     'cta_titre' => self::TODO,
                     'cta_texte' => self::TODO,
-                    'cta_bouton' => 'Commencer maintenant',
+                    'cta_bouton' => 'Déposer mon dossier',
                 ],
             ],
 
@@ -133,8 +149,39 @@ class SiteContentSeeder extends Seeder
                     'service_6_texte' => self::TODO,
                     'tarifs_titre' => 'Nos tarifs',
                     'tarifs_texte' => self::TODO,
+                    'carte_lien' => 'En savoir plus',
+                    'retour' => 'Tous nos services',
+                    // Périmètre de la prestation, sur la fiche de chaque
+                    // service. Dire ce qui n'est pas compris évite l'essentiel
+                    // des litiges.
+                    'perimetre_titre' => 'Ce que comprend cet accompagnement',
+                    'inclus_titre' => 'Compris dans la prestation',
+                    'exclus_titre' => 'Non compris',
+                    'tarif_titre' => 'Tarif',
                     'cta_titre' => self::TODO,
                     'cta_bouton' => 'Déposer mon dossier',
+                ],
+            ],
+
+            // Bande de réassurance, sous le hero.
+            //
+            // Livrée entièrement vide, et non avec des placeholders : ce sont
+            // des chiffres, et un chiffre inventé — « 98 % de réussite » — est
+            // exactement ce que font les officines qui ciblent les candidats
+            // d'Afrique centrale. La bande n'apparaît qu'une fois de vraies
+            // données saisies.
+            'reassurance' => [
+                'label' => 'Bande de réassurance — chiffres réels uniquement',
+                'content' => [
+                    'titre' => 'Le cabinet en bref',
+                    'element_1_valeur' => '',
+                    'element_1_libelle' => "Années d'expérience",
+                    'element_2_valeur' => '',
+                    'element_2_libelle' => 'Dossiers accompagnés',
+                    'element_3_valeur' => '',
+                    'element_3_libelle' => 'Pays couverts',
+                    'element_4_valeur' => '',
+                    'element_4_libelle' => 'Appartenance professionnelle',
                 ],
             ],
 
@@ -157,6 +204,14 @@ class SiteContentSeeder extends Seeder
                     'valeur_3_texte' => self::TODO,
                     'equipe_titre' => "L'équipe",
                     'equipe_texte' => self::TODO,
+                    // Statut professionnel : n'inventez ni agrément, ni numéro,
+                    // ni affiliation. Le bloc reste masqué tant qu'il n'est pas
+                    // rédigé.
+                    'statut_titre' => 'À quel titre nous intervenons',
+                    'statut_texte' => self::TODO,
+                    'statut_numero_libelle' => "Numéro d'enregistrement",
+                    'statut_numero' => self::TODO,
+                    'statut_verification' => self::TODO,
                     'cta_titre' => self::TODO,
                     'cta_bouton' => 'Déposer mon dossier',
                 ],
@@ -170,6 +225,8 @@ class SiteContentSeeder extends Seeder
                     'titre' => 'Ils nous ont fait confiance',
                     'introduction' => self::TODO,
                     'aucun' => 'Les premiers témoignages seront publiés prochainement.',
+                    'lien_video' => 'Voir la vidéo',
+                    'video_nouvel_onglet' => 'ouvre un nouvel onglet',
                     'cta_titre' => self::TODO,
                     'cta_bouton' => 'Déposer mon dossier',
                 ],

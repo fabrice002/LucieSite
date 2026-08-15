@@ -51,6 +51,34 @@ it('ouvre les listes de contenu pour un admin', function (string $page) {
     'équipe' => ListTeamMembers::class,
 ]);
 
+it('réunit les contenus sous « Contenu du site » dans la navigation', function () {
+    $this->actingAs(personnelContenu('admin'))
+        ->get('/admin')
+        ->assertOk()
+        ->assertSee('Contenu du site')
+        ->assertSee('Questions fréquentes')
+        ->assertSee('Composition des pages')
+        ->assertSee('Équipe');
+});
+
+it('cache le contenu du site à un agent', function () {
+    $this->actingAs(personnelContenu('agent'))
+        ->get('/admin')
+        ->assertOk()
+        ->assertDontSee('Contenu du site')
+        ->assertDontSee('Composition des pages');
+});
+
+it('affiche le logo du back-office à taille contrainte', function () {
+    // Le panel sert sa CSS précompilée : une classe Tailwind du site n'y
+    // existe pas. Sans dimension explicite, le monogramme recouvre la
+    // navigation. Les styles en ligne sont donc voulus, pas un oubli.
+    $this->actingAs(personnelContenu('admin'))
+        ->get('/admin')
+        ->assertOk()
+        ->assertSee('width: 1rem', false);
+});
+
 it('refuse l\'accès au contenu à un agent', function (string $url) {
     $this->actingAs(personnelContenu('agent'))
         ->get($url)

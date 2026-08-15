@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Services\Schemas;
 
 use App\Filament\Forms\ContentImage;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -53,6 +54,49 @@ class ServiceForm
                     RichEditor::make('body')
                         ->label('Contenu de la page')
                         ->columnSpanFull(),
+                ]),
+
+            // Périmètre de la prestation.
+            //
+            // Le flou sur ce qui est compris est le principal terrain des
+            // litiges dans ce secteur. Énoncer ce qui n'est PAS compris protège
+            // le candidat autant que le cabinet. Aucun plafond sur le nombre de
+            // lignes.
+            Section::make('Tarif et périmètre')
+                ->description('Ce que la prestation comprend, et surtout ce qu\'elle ne comprend pas. Rien ne s\'affiche sur le site tant que ces listes sont vides.')
+                ->columns(2)
+                ->schema([
+                    TextInput::make('price_note')
+                        ->label('Tarif')
+                        ->maxLength(255)
+                        ->placeholder('Sur devis, après évaluation du profil')
+                        ->helperText('Texte libre. N\'annoncez pas de montant que vous ne pourriez pas tenir.')
+                        ->columnSpanFull(),
+
+                    Repeater::make('included')
+                        ->label('Compris dans la prestation')
+                        ->simple(
+                            TextInput::make('ligne')
+                                ->hiddenLabel()
+                                ->maxLength(255)
+                                ->placeholder('Évaluation complète du profil'),
+                        )
+                        ->addActionLabel('Ajouter une ligne')
+                        ->reorderable()
+                        ->default([]),
+
+                    Repeater::make('excluded')
+                        ->label('Non compris')
+                        ->simple(
+                            TextInput::make('ligne')
+                                ->hiddenLabel()
+                                ->maxLength(255)
+                                ->placeholder('Frais gouvernementaux et frais de visa'),
+                        )
+                        ->addActionLabel('Ajouter une ligne')
+                        ->reorderable()
+                        ->default([])
+                        ->helperText('Les frais officiels, la traduction, les examens de langue… tout ce que le candidat paiera en plus.'),
                 ]),
 
             Section::make('Présentation')

@@ -48,8 +48,8 @@ class GenerateBrandIcons extends Command
      */
     private function ecrireSvg(): void
     {
-        $fond = (string) config('brand.icone_fond', '#1e40af');
-        $trait = (string) config('brand.icone_trait', '#ffffff');
+        $fond = $this->fond();
+        $trait = $this->trait();
 
         $tracés = '';
 
@@ -124,8 +124,8 @@ class GenerateBrandIcons extends Command
         imagealphablending($image, true);
         imageantialias($image, true);
 
-        $fond = $this->allouer($image, (string) config('brand.icone_fond', '#1e40af'));
-        $trait = $this->allouer($image, (string) config('brand.icone_trait', '#ffffff'));
+        $fond = $this->allouer($image, $this->fond());
+        $trait = $this->allouer($image, $this->trait());
 
         $this->fondArrondi($image, $taille, (int) round($taille * 0.2), $fond);
 
@@ -156,6 +156,23 @@ class GenerateBrandIcons extends Command
         foreach ([[$rayon, $rayon], [$taille - $rayon - 1, $rayon], [$rayon, $taille - $rayon - 1], [$taille - $rayon - 1, $taille - $rayon - 1]] as [$cx, $cy]) {
             imagefilledellipse($image, $cx, $cy, $diametre, $diametre, $couleur);
         }
+    }
+
+    /**
+     * Le fond de l'icône : la couleur principale réglée dans « Apparence ».
+     *
+     * L'icône d'onglet suit ainsi la palette choisie, au lieu de rester figée
+     * dans un fichier de configuration. BRAND_ICON_BACKGROUND reste honoré
+     * comme repli, pour les installations qui s'en servaient déjà.
+     */
+    private function fond(): string
+    {
+        return (string) setting('couleur_principale', config('brand.icone_fond', '#1e40af'));
+    }
+
+    private function trait(): string
+    {
+        return (string) setting('couleur_texte_sur_principale', config('brand.icone_trait', '#ffffff'));
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Models\Faq;
 use App\Models\FaqCategory;
 use App\Models\PageSection;
 use App\Models\Service;
+use App\Models\Testimonial;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,36 @@ class ContentSeeder extends Seeder
         $this->services();
         $this->faq();
         $this->sections();
+        $this->temoignages();
+    }
+
+    /**
+     * Deux témoignages d'exemple, pour montrer la forme attendue.
+     *
+     * Non publiés, et explicitement marqués comme des exemples : un faux avis
+     * mis en ligne serait un mensonge envers des candidats déjà très exposés à
+     * la fraude, et détruirait la crédibilité du cabinet le jour où il se voit.
+     */
+    private function temoignages(): void
+    {
+        $exemples = [
+            ['Prénom', 'Cameroun', 'Entrée Express'],
+            ['Prénom', 'Côte d\'Ivoire', 'Permis d\'études'],
+        ];
+
+        foreach ($exemples as $rang => [$prenom, $pays, $programme]) {
+            Testimonial::query()->firstOrCreate(
+                ['author_name' => $prenom.' — exemple à remplacer'],
+                [
+                    'author_country' => $pays,
+                    'author_programme' => $programme,
+                    'content' => 'exemple — à remplacer par un témoignage réel, recueilli avec '
+                        .'l\'accord écrit de la personne. '.self::TODO,
+                    'sort_order' => $rang,
+                    'is_published' => false,
+                ],
+            );
+        }
     }
 
     /**

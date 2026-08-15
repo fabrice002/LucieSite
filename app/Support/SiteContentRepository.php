@@ -19,6 +19,15 @@ class SiteContentRepository
     public const CACHE_PREFIX = 'site_content';
 
     /**
+     * La marque des textes que la cliente n'a pas encore rédigés.
+     *
+     * Déclarée ici plutôt que dans chaque seeder : les vues doivent pouvoir la
+     * reconnaître pour ne pas transformer un placeholder en numéro de téléphone
+     * cliquable ou en chiffre affiché comme un fait.
+     */
+    public const PLACEHOLDER = '[À COMPLÉTER PAR LA CLIENTE]';
+
+    /**
      * Resolve a single text, addressed as "bloc.cle".
      */
     public function get(string $path, ?string $default = null): string
@@ -34,6 +43,21 @@ class SiteContentRepository
         return is_string($value) && $value !== ''
             ? $value
             : ($default ?? '');
+    }
+
+    /**
+     * Le texte s'il est réellement rédigé, sinon null.
+     *
+     * Sert partout où un contenu absent ne doit rien afficher du tout plutôt
+     * qu'un placeholder : coordonnées, chiffres de réassurance, statut
+     * professionnel. Afficher « [À COMPLÉTER PAR LA CLIENTE] » en ligne serait
+     * pire que ne rien afficher.
+     */
+    public function filled(string $path): ?string
+    {
+        $valeur = trim($this->get($path));
+
+        return ($valeur === '' || str_contains($valeur, self::PLACEHOLDER)) ? null : $valeur;
     }
 
     /**

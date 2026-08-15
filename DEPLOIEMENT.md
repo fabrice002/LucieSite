@@ -367,10 +367,31 @@ combinez l'IP et l'adresse e-mail. La ligne exacte figure en commentaire dans
 - [ ] Questions fréquentes publiées, thème par thème
 - [ ] Blocs de page publiés : livrés dépubliés car ils portent des placeholders
 - [ ] Bloc « chiffres » : **vide, ou uniquement des données vérifiables**
+- [ ] Bande de réassurance (bloc « Réassurance ») : **vide, ou uniquement des
+      chiffres réels**. Elle reste invisible tant que rien n'est saisi — c'est
+      le comportement attendu, pas une panne
+- [ ] Aucune promesse de résultat nulle part : ni « visa garanti », ni taux de
+      réussite, ni compte à rebours
+- [ ] Témoignages d'exemple du seeder **supprimés ou remplacés** par de vrais
+      témoignages, recueillis avec l'accord écrit des personnes
+- [ ] Statut professionnel rédigé (À propos) : à quel titre le cabinet
+      intervient, et le numéro d'enregistrement s'il est réglementé.
+      **N'inventez ni agrément, ni numéro, ni affiliation**
+- [ ] Périmètre renseigné sur chaque service publié : ce qui est compris, et
+      surtout ce qui ne l'est pas
+- [ ] Photos fournies par la cliente, **jamais d'image de banque**. À défaut, les
+      emplacements affichent un aplat de la charte — c'est préférable
 - [ ] Mentions légales et politique de confidentialité rédigées
-- [ ] Coordonnées du cabinet renseignées
-- [ ] Logo définitif en place (`resources/views/components/app-logo-icon.blade.php`,
-      `public/favicon.svg`)
+- [ ] Coordonnées du cabinet renseignées : adresse, téléphone, WhatsApp, e-mail,
+      horaires. Vérifier que les liens `tel:`, `mailto:` et WhatsApp aboutissent
+- [ ] Logo définitif téléversé depuis **Contenu du site › Apparence**
+- [ ] Couleurs réglées, **sans avertissement de contraste** à l'enregistrement
+- [ ] « Régénérer les icônes » lancé après le choix des couleurs, puis
+      `public/favicon.svg` vérifié
+- [ ] Police choisie : contrôler qu'**une seule famille** est préchargée dans le
+      HTML d'une page publique (`view-source:`, chercher `rel="preload"`).
+      Plusieurs familles signalent un `@fonts` sans argument quelque part —
+      autant de fichiers inutiles à télécharger en 3G
 
 ### Qualité
 

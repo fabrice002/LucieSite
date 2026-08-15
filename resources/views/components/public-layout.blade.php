@@ -7,6 +7,9 @@
     $siteName = content('global.nom_site', 'LN Immigration');
     $pageTitle = $title ?: $siteName;
 
+    // Apparence réglée depuis le back-office : couleurs, police, thème sombre.
+    $theme = app(App\Support\ThemePublic::class);
+
     // Une seule source de vérité pour la navigation : en-tête, menu mobile et
     // pied de page lisent la même liste.
     $navigation = [
@@ -41,26 +44,37 @@
     <meta property="og:url" content="{{ url()->current() }}">
     <meta name="twitter:card" content="summary">
 
-    <link rel="icon" href="/favicon.ico" sizes="any">
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    @if ($favicon = $theme->urlFavicon())
+        <link rel="icon" href="{{ $favicon }}">
+    @else
+        <link rel="icon" href="/favicon.ico" sizes="any">
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    @endif
 
-    {{-- Le thème est appliqué avant le premier rendu pour éviter tout
-         clignotement. La clé est celle du back-office : le choix de
-         l'utilisateur le suit d'un bout à l'autre du site. --}}
-    <script>
-        (function () {
-            try {
-                var choix = localStorage.getItem('flux.appearance');
-                var sombre = choix === 'dark'
-                    || (choix !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-                document.documentElement.classList.toggle('dark', sombre);
-            } catch (e) {}
-        })();
-    </script>
+    @if ($theme->themeSombreActif())
+        {{-- Le thème est appliqué avant le premier rendu pour éviter tout
+             clignotement. La clé est celle du back-office : le choix de
+             l'utilisateur le suit d'un bout à l'autre du site. --}}
+        <script>
+            (function () {
+                try {
+                    var choix = localStorage.getItem('flux.appearance');
+                    var sombre = choix === 'dark'
+                        || (choix !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    document.documentElement.classList.toggle('dark', sombre);
+                } catch (e) {}
+            })();
+        </script>
+    @endif
 
-    @fonts
+    {{-- Une seule famille est demandée, celle qui est réglée : les autres ne
+         sont ni préchargées ni téléchargées. La 3G ne pardonne pas. --}}
+    @fonts([$theme->police()])
     @vite('resources/css/public.css')
+
+    {{-- Après la feuille, pour surcharger les jetons qu'elle déclare. --}}
+    <style>{!! $theme->css() !!}</style>
 </head>
 <body class="flex min-h-screen flex-col bg-surface text-ink antialiased">
 
@@ -72,7 +86,7 @@
     <header class="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
             <a href="{{ route('home') }}" class="flex items-center gap-2.5">
-                <span class="flex size-9 items-center justify-center rounded-lg bg-brand text-white">
+                <span class="flex size-9 items-center justify-center rounded-lg bg-brand text-brand-contrast">
                     <x-app-logo-icon class="size-5" />
                 </span>
                 <span class="text-base font-semibold tracking-tight text-ink-strong">{{ $siteName }}</span>
@@ -90,15 +104,19 @@
             </nav>
 
             <div class="flex items-center gap-2">
-                <x-theme-toggle />
+                @if ($theme->themeSombreActif())
+                    <x-theme-toggle />
+                @endif
 
                 <a href="{{ route('suivi.index') }}"
                    class="hidden rounded-md border border-line px-3 py-2 text-sm font-medium text-ink transition hover:border-brand hover:text-brand-text sm:inline-block">
                     {{ content('global.nav_suivre', 'Suivre mon dossier') }}
                 </a>
 
+                {{-- L'appel à l'action dominant, présent dès le premier écran
+                     et sur toutes les pages. --}}
                 <a href="{{ route('depot.create') }}"
-                   class="rounded-md bg-brand px-3 py-2 text-sm font-medium text-white transition hover:bg-brand-hover">
+                   class="rounded-md bg-brand px-3 py-2 text-sm font-medium text-brand-contrast transition hover:bg-brand-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
                     {{ content('global.nav_deposer', 'Déposer mon dossier') }}
                 </a>
 
@@ -126,6 +144,11 @@
                            class="block rounded-md px-3 py-2 text-sm text-ink transition hover:bg-surface-muted hover:text-brand-text">
                             {{ content('global.nav_suivre', 'Suivre mon dossier') }}
                         </a>
+
+                        <a href="{{ route('depot.create') }}"
+                           class="mt-1 block rounded-md bg-brand px-3 py-2 text-center text-sm font-medium text-brand-contrast">
+                            {{ content('global.nav_deposer', 'Déposer mon dossier') }}
+                        </a>
                     </nav>
                 </details>
             </div>
@@ -140,7 +163,7 @@
         <div class="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-4">
             <div class="md:col-span-2">
                 <div class="flex items-center gap-2.5">
-                    <span class="flex size-8 items-center justify-center rounded-lg bg-brand text-white">
+                    <span class="flex size-8 items-center justify-center rounded-lg bg-brand text-brand-contrast">
                         <x-app-logo-icon class="size-4" />
                     </span>
                     <span class="font-semibold text-ink-strong">{{ $siteName }}</span>
@@ -165,15 +188,66 @@
                 </ul>
             </div>
 
+            {{-- Coordonnées complètes : dans ce secteur, une adresse physique
+                 vérifiable est l'un des principaux signaux de légitimité. Rien
+                 n'est affiché tant que la cliente n'a pas renseigné la valeur —
+                 un « [À COMPLÉTER] » en ligne serait pire que l'absence. --}}
+            @php
+                $adresse = content_filled('global.footer_adresse');
+                $telephone = content_filled('global.footer_telephone');
+                $whatsapp = content_filled('global.footer_whatsapp');
+                $courriel = content_filled('global.footer_email');
+                $horaires = content_filled('global.footer_horaires');
+                $lienDiscret = 'rounded transition hover:text-brand-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand';
+            @endphp
+
             <div>
                 <p class="text-sm font-semibold text-ink-strong">
                     {{ content('global.footer_titre_contact', 'Nous joindre') }}
                 </p>
-                <ul class="mt-3 space-y-2 text-sm text-ink-muted">
-                    <li>{{ content('global.footer_adresse') }}</li>
-                    <li>{{ content('global.footer_telephone') }}</li>
-                    <li>{{ content('global.footer_email') }}</li>
-                </ul>
+
+                <address class="mt-3 space-y-2 text-sm text-ink-muted not-italic">
+                    @if ($adresse)
+                        <p>{{ $adresse }}</p>
+                    @endif
+
+                    @if ($telephone)
+                        <p>
+                            <a href="tel:{{ preg_replace('/[^\d+]/', '', $telephone) }}" class="{{ $lienDiscret }}">
+                                {{ $telephone }}
+                            </a>
+                        </p>
+                    @endif
+
+                    @if ($whatsapp)
+                        <p>
+                            <a href="https://wa.me/{{ preg_replace('/\D/', '', $whatsapp) }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="{{ $lienDiscret }}">
+                                WhatsApp {{ $whatsapp }}
+                            </a>
+                        </p>
+                    @endif
+
+                    @if ($courriel)
+                        <p>
+                            <a href="mailto:{{ $courriel }}" class="{{ $lienDiscret }}">{{ $courriel }}</a>
+                        </p>
+                    @endif
+
+                    @if ($horaires)
+                        <p class="pt-1">{{ $horaires }}</p>
+                    @endif
+                </address>
+
+                {{-- À quel titre le cabinet intervient. Reste masqué tant que ce
+                     n'est pas renseigné : aucun agrément n'est supposé ici. --}}
+                @if ($statut = content_filled('global.statut_professionnel'))
+                    <p class="mt-4 border-t border-line pt-3 text-xs leading-relaxed text-ink-muted">
+                        {{ $statut }}
+                    </p>
+                @endif
             </div>
         </div>
 

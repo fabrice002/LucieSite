@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $author_name
  * @property string|null $author_country
+ * @property string|null $author_programme
  * @property string $content
  * @property string|null $photo_path
  * @property string|null $video_url
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'author_name',
     'author_country',
+    'author_programme',
     'content',
     'photo_path',
     'video_url',

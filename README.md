@@ -177,6 +177,7 @@ Tout est réuni sous **`/admin`**. Il n'existe pas d'autre espace authentifié :
 | Contenu du site › Questions fréquentes | Thèmes et questions, publication, ordre | admin |
 | Contenu du site › Blocs de page | Composition des pages, bloc par bloc | admin |
 | Contenu du site › Équipe | Membres présentés sur « À propos » | admin |
+| Contenu du site › Apparence | Couleurs, logo, police, thème sombre | admin |
 | Comptes et rôles | Création de comptes, attribution des rôles | admin |
 | Mon profil / Sécurité | Nom, e-mail, mot de passe, double authentification | admin, agent |
 
@@ -187,49 +188,50 @@ Tout est réuni sous **`/admin`**. Il n'existe pas d'autre espace authentifié :
 - `agent` — consultation des dossiers, changement de statut, notes internes.
   Ni suppression, ni textes du site, ni gestion des comptes.
 
-### Changer le logo
+### Apparence : logo, couleurs et police
 
-Tout se règle dans **`config/brand.php`**, un seul endroit. Le logo apparaît
-alors partout : en-tête et pied du site public, page de connexion, back-office,
-et icône de l'onglet du navigateur.
+Tout se règle depuis le back-office, **Contenu du site › Apparence**, sans
+développeur et sans recompilation. Une modification est visible immédiatement
+sur le site public.
 
-**Avec le logo définitif de la cliente :**
+| Réglage | Effet |
+|---|---|
+| Palette | Remplit les quatre couleurs d'un coup. Cinq propositions, toutes conformes au contraste minimum |
+| Couleur principale | Boutons, liens, aplats. Les nuances de survol, de fond doux et de filet en sont **calculées** |
+| Texte sur la couleur principale | La couleur du texte posé sur ces aplats |
+| Couleur secondaire, accent | Éléments d'appui et mises en avant ponctuelles |
+| Logo, logo pour fond sombre, icône d'onglet | Téléversés. Sans logo, le monogramme « LN » est tracé et suit le thème |
+| Police | Quatre familles auto-hébergées ; **une seule est téléchargée par visiteur** |
+| Thème sombre | Désactivé, le site reste clair et le bouton de bascule disparaît |
 
-1. Déposer le fichier dans `public/images/`, par exemple `public/images/logo.svg`
-2. Renseigner le chemin :
+**Garde-fou de contraste.** À l'enregistrement, le rapport de contraste WCAG
+entre la couleur principale et son texte est calculé. Sous 4,5:1, un
+avertissement indique le ratio obtenu et le minimum requis. L'enregistrement
+reste possible : c'est son site, elle décide en connaissance de cause.
 
-```php
-// config/brand.php
-'logo' => 'images/logo.svg',
-```
+**Icônes du navigateur.** Le bouton « Régénérer les icônes » rejoue
+`php artisan ln:generate-icons`, qui redessine `favicon.svg`, `favicon.ico` et
+`apple-touch-icon.png` à partir de la couleur principale et de son texte.
+L'onglet suit donc la palette choisie.
 
-ou, sans toucher au code, dans `.env` :
+> Les navigateurs conservent les favicons très longtemps : videz le cache du
+> vôtre, sinon l'ancienne icône semblera persister.
 
-```dotenv
-BRAND_LOGO=images/logo.svg
-```
+**Comment les couleurs sont appliquées.** Par des **variables CSS** injectées
+dans le `<head>`, après la feuille de style, qui surchargent les jetons de
+`resources/css/public.css`. Aucune classe Tailwind n'est construite
+dynamiquement — `bg-{{ $couleur }}` n'existerait jamais dans le CSS compilé,
+puisque le compilateur ne voit pas ces classes au build.
 
-3. Régénérer l'icône d'onglet :
+**Replis.** `config/brand.php` conserve les valeurs livrées, sous la clé
+`apparence`. Table vide, valeur effacée ou couleur mal formée : le site reprend
+son apparence d'origine plutôt que de produire une feuille cassée. La variable
+`BRAND_LOGO` reste honorée pour les installations qui s'en servaient.
 
-```bash
-php artisan ln:generate-icons
-```
-
-**Sans logo définitif**, un monogramme « LN » est utilisé. Il est tracé depuis
-`config/brand.php` et suit le thème clair ou sombre, ce qu'un fichier image ne
-sait pas faire. Ses couleurs se règlent au même endroit :
-
-```php
-'icone_fond' => '#1e40af',
-'icone_trait' => '#ffffff',
-```
-
-La commande `ln:generate-icons` produit `favicon.svg`, `favicon.ico` et
-`apple-touch-icon.png` à partir de ces mêmes valeurs — la marque reste donc
-identique dans les pages et dans l'onglet.
-
-> Pensez à vider le cache du navigateur : les favicons sont conservés très
-> longtemps, et l'ancienne icône peut sembler persister.
+**Ajouter une police** demande une intervention technique, car les fichiers sont
+téléchargés au build : ajouter la famille dans `vite.config.js` **et** dans
+`brand.polices`, avec le même alias (le nom en minuscules et tirets), puis
+`npm run build`.
 
 ### Modèle de données
 
@@ -238,14 +240,68 @@ identique dans les pages et dans l'onglet.
 | `applications` | Un dossier déposé | `reference` unique (`LN-2026-00147`), l'`id` n'est jamais exposé. `SoftDeletes`. `internal_notes` **strictement privé**. `consented_at` + `privacy_version` |
 | `documents` | Une ligne **par fichier** | `path` en UUID sur le disque privé, `original_name` pour l'affichage seul. `scan_status` renseigné par ClamAV |
 | `application_updates` | Messages adressés au candidat | Lisibles sur la page de suivi. `applications.status` reste la source de vérité du statut |
-| `testimonials` | Témoignages | Créés uniquement depuis le back-office. `photo_path` sur le disque **public** — le seul fichier qui y va |
+| `testimonials` | Témoignages | Créés uniquement depuis le back-office. `photo_path` sur le disque **public** — le seul fichier qui y va. `author_programme` affiché avec le pays : un témoignage sans contexte ne rassure personne |
 | `site_contents` | Tous les textes publics | JSON à plat, unique sur `(key, locale)`. Ajouter une langue = insérer des lignes |
-| `services` | Une fiche de programme | `slug` unique et exposé à la place de l'`id`. Non publié = absent des listes, du plan du site, et 404 sur sa fiche |
+| `services` | Une fiche de programme | `slug` unique et exposé à la place de l'`id`. Non publié = absent des listes, du plan du site, et 404 sur sa fiche. `included` / `excluded` / `price_note` : le périmètre affiché sur la fiche |
 | `faq_categories` / `faqs` | Thèmes et questions | Un thème dépublié masque ses questions ; un thème sans question publiée n'apparaît pas |
 | `page_sections` | Blocs empilables d'une page | `type` en **chaîne**, pas en enum : un type retiré du code est ignoré, jamais une page cassée. `data` en JSON, sa forme dépend du type |
 | `team_members` | Membres présentés sur « À propos » | La section entière disparaît si personne n'est publié |
+| `site_settings` | Réglages d'apparence | Une ligne par réglage : ajouter une couleur n'impose aucune migration. Vide = apparence livrée |
 | `users` | Comptes du cabinet | Aucun compte candidat. `must_change_password` pour les mots de passe provisoires |
 | `activity_log` | Journal | Dépôts, changements de statut, téléchargements, effacements |
+
+### Conception des pages publiques
+
+La mise en page suit les conventions du secteur, qui ne sont pas décoratives :
+elles répondent à l'inquiétude d'un candidat qui confie un projet de vie et de
+l'argent à un cabinet qu'il ne connaît pas.
+
+| Élément | Où | Règle |
+|---|---|---|
+| Appel à l'action dominant | En-tête, hero, bas de chaque page | Un seul, répété : « Déposer mon dossier ». Le second, « Poser une question », reste secondaire |
+| Bande de réassurance | Sous le hero | Bloc `reassurance`. **Livrée vide** — invisible tant qu'aucune donnée réelle n'est saisie |
+| Notre processus | Accueil | `<x-process-steps>` : le nombre d'étapes découle des clés `etape_N_titre`, rien n'est figé |
+| Services en cartes | Accueil et page Services | Chaque carte mène à sa page détaillée |
+| Périmètre de la prestation | Fiche d'un service | Ce qui est compris **et ce qui ne l'est pas** |
+| Témoignages | Accueil et page dédiée | Prénom, pays et programme obtenu, photo si la personne l'a fournie |
+| Coordonnées complètes | Pied de page | Adresse, téléphone, WhatsApp, e-mail, horaires. L'adresse physique est un signal de légitimité déterminant |
+| Statut professionnel | À propos et pied de page | À quel titre le cabinet intervient. Masqué tant qu'il n'est pas rédigé |
+
+#### Ce que le site ne fait jamais
+
+Ce secteur attire la fraude, et les candidats d'Afrique centrale en sont une
+cible fréquente. Ces règles protègent les candidats autant que la réputation du
+cabinet — un test les vérifie (`tests/Feature/PublicDesignTest.php`).
+
+- **Aucune promesse de résultat** : ni « visa garanti », ni taux de réussite, ni
+  compte à rebours artificiel.
+- **Aucune statistique inventée** : les blocs `chiffres` et la bande de
+  réassurance sont livrés **vides**, pas avec des exemples.
+- **Aucun témoignage fictif publié** : les exemples du seeder portent la mention
+  « exemple — à remplacer » et sont non publiés.
+- **Aucun agrément supposé** : le statut professionnel et son numéro restent des
+  placeholders tant que la cliente ne les a pas renseignés.
+- **Aucune photo de banque d'images** : `<x-media-slot>` affiche un aplat de la
+  charte tant qu'aucune photo authentique n'est fournie. Un visuel générique est
+  le premier signal de défiance.
+
+#### Placeholder ou texte réel
+
+`content()` rend le texte tel quel, placeholder compris — c'est voulu pour les
+textes éditoriaux, qui doivent se voir tant qu'ils ne sont pas écrits.
+
+Partout où un contenu manquant doit faire **disparaître** l'élément, utilisez
+`content_filled()`, qui renvoie `null` sur un texte vide ou marqué
+`[À COMPLÉTER PAR LA CLIENTE]` :
+
+```blade
+@if ($telephone = content_filled('global.footer_telephone'))
+    <a href="tel:{{ preg_replace('/[^\d+]/', '', $telephone) }}">{{ $telephone }}</a>
+@endif
+```
+
+Sans cette précaution, un placeholder deviendrait un numéro de téléphone
+cliquable ou un chiffre présenté comme un fait.
 
 ### Textes du site
 

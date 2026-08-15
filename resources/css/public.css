@@ -14,7 +14,8 @@
 @import 'tailwindcss';
 
 @source '../views/public';
-@source '../views/components/public-layout.blade.php';
+@source '../views/sections';
+@source '../views/components';
 
 /* Même convention que le back-office : la classe .dark sur <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
@@ -31,11 +32,25 @@
     --color-ink-strong: #0f172a;
     --color-ink-muted: #64748b;
 
+    /* Ces cinq jetons, plus les deux familles ci-dessous, sont surchargés à
+       l'exécution depuis « Apparence » — voir App\Support\ThemePublic. Les
+       valeurs ici restent celles du site livré, et servent de repli. */
     --color-brand: #1d4ed8;
     --color-brand-hover: #1e40af;
     --color-brand-text: #1e40af;
     --color-brand-soft: #eff6ff;
     --color-brand-line: #bfdbfe;
+
+    /* Couleur du texte posé sur un aplat de la couleur principale. */
+    --color-brand-contrast: #ffffff;
+
+    --color-secondary: #0f766e;
+    --color-secondary-text: #0f766e;
+    --color-secondary-soft: #f0fdfa;
+
+    --color-accent: #b45309;
+    --color-accent-text: #b45309;
+    --color-accent-soft: #fffbeb;
 
     --color-notice: #fffbeb;
     --color-notice-line: #fde68a;
@@ -67,6 +82,14 @@
         --color-brand-text: #93c5fd;
         --color-brand-soft: #172554;
         --color-brand-line: #1e40af;
+
+        --color-secondary: #14b8a6;
+        --color-secondary-text: #5eead4;
+        --color-secondary-soft: #0f2b28;
+
+        --color-accent: #f59e0b;
+        --color-accent-text: #fcd34d;
+        --color-accent-soft: #2a1e0a;
 
         --color-notice: #292014;
         --color-notice-line: #78350f;
@@ -108,6 +131,22 @@
  | Tailwind ne stylise pas le HTML injecté : ces règles s'en chargent.
  */
 @layer components {
+    /* Bascule entre logo clair et logo sombre. Écrites ici plutôt qu'en
+       utilitaires Tailwind : le composant x-app-logo-icon sert aussi des pages
+       qui ne chargent pas cette feuille, et une classe absente du CSS produit
+       ne masquerait rien du tout. */
+    .marque-sombre {
+        display: none;
+    }
+
+    .dark .marque-clair {
+        display: none;
+    }
+
+    .dark .marque-sombre {
+        display: block;
+    }
+
     .prose-simple :is(p, ul, ol) {
         margin-block: 0.75rem;
     }

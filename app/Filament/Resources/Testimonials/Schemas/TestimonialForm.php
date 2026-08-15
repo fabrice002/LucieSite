@@ -26,6 +26,15 @@ class TestimonialForm
                         ->label('Pays')
                         ->maxLength(255),
 
+                    // Le programme obtenu vaut plus qu'un paragraphe élogieux :
+                    // un témoignage sans contexte ne rassure personne, et c'est
+                    // la forme que prennent les faux avis.
+                    TextInput::make('author_programme')
+                        ->label('Programme obtenu')
+                        ->maxLength(255)
+                        ->helperText('Par exemple « Entrée Express, 2025 ». Affiché sous le nom.')
+                        ->columnSpanFull(),
+
                     Textarea::make('content')
                         ->label('Contenu')
                         ->required()

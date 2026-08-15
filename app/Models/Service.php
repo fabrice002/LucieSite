@@ -27,6 +27,9 @@ use Illuminate\Support\Carbon;
  * @property string $title
  * @property string $summary
  * @property string|null $body
+ * @property string|null $price_note
+ * @property list<string>|null $included
+ * @property list<string>|null $excluded
  * @property string|null $image_path
  * @property string|null $image_alt
  * @property string|null $icon
@@ -45,6 +48,9 @@ use Illuminate\Support\Carbon;
     'title',
     'summary',
     'body',
+    'price_note',
+    'included',
+    'excluded',
     'image_path',
     'image_alt',
     'icon',
@@ -67,9 +73,51 @@ class Service extends Model
     protected function casts(): array
     {
         return [
+            'included' => 'array',
+            'excluded' => 'array',
             'is_published' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    /**
+     * Ce que la prestation comprend.
+     *
+     * @return list<string>
+     */
+    public function inclus(): array
+    {
+        return $this->nettoyer($this->included);
+    }
+
+    /**
+     * Ce qu'elle ne comprend pas.
+     *
+     * Aussi important que la liste précédente : le flou sur le périmètre est le
+     * principal terrain des litiges dans ce secteur.
+     *
+     * @return list<string>
+     */
+    public function exclus(): array
+    {
+        return $this->nettoyer($this->excluded);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function nettoyer(mixed $valeurs): array
+    {
+        if (! is_array($valeurs)) {
+            return [];
+        }
+
+        $lignes = array_map(
+            fn (mixed $valeur): string => is_string($valeur) ? trim($valeur) : '',
+            $valeurs,
+        );
+
+        return array_values(array_filter($lignes, fn (string $ligne): bool => $ligne !== ''));
     }
 
     /**
