@@ -105,7 +105,11 @@ class SiteContentSeeder extends Seeder
                     // Emplacement d'image : tant qu'aucune photo authentique
                     // n'est fournie, un aplat de la charte est affiché. Jamais
                     // d'image de banque.
-                    'hero_image' => self::TODO,
+                    //
+                    // Vide, et non un placeholder : la clé se termine par
+                    // « _image », elle est donc rendue en téléverseur — lequel
+                    // croirait avoir un fichier nommé « [À COMPLÉTER…] ».
+                    'hero_image' => '',
                     'hero_image_alt' => self::TODO,
                     'section_services_titre' => 'Nos services',
                     'section_services_intro' => self::TODO,

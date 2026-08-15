@@ -10,6 +10,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -48,6 +49,19 @@ class AdminPanelProvider extends PanelProvider
             ->profile(isSimple: false)
             ->colors([
                 'primary' => Color::Blue,
+            ])
+            // Ordre imposé, sinon les groupes se rangent selon l'ordre de
+            // découverte des ressources — c'est-à-dire au hasard.
+            //
+            // Trois groupes, qui répondent à trois questions différentes :
+            // traiter les dossiers, tenir le site, administrer les comptes.
+            // Sans icône sur les groupes : Filament refuse qu'un groupe et ses
+            // éléments en portent tous deux, et celles des éléments sont plus
+            // utiles — ce sont elles qui distinguent Services, FAQ et Équipe.
+            ->navigationGroups([
+                NavigationGroup::make('Dossiers'),
+                NavigationGroup::make('Contenu du site'),
+                NavigationGroup::make('Administration')->collapsed(),
             ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

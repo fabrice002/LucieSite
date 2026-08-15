@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class TestimonialResource extends Resource
 {
@@ -20,13 +21,17 @@ class TestimonialResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
+    // Un témoignage s'affiche sur le site public : sa place est avec le reste
+    // du contenu, pas à côté des dossiers de candidats.
+    protected static string|UnitEnum|null $navigationGroup = 'Contenu du site';
+
     protected static ?string $modelLabel = 'témoignage';
 
     protected static ?string $pluralModelLabel = 'témoignages';
 
     protected static ?string $navigationLabel = 'Témoignages';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $recordTitleAttribute = 'author_name';
 

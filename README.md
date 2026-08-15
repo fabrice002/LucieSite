@@ -167,27 +167,37 @@ le worker** — il garde l'ancienne configuration en mémoire.
 Tout est réuni sous **`/admin`**. Il n'existe pas d'autre espace authentifié :
 `/dashboard` et `/settings/*` redirigent vers le back-office.
 
-| Section | Contenu | Accès |
-|---|---|---|
-| Tableau de bord | Dossiers par statut, dossiers du mois, 5 derniers reçus | admin, agent |
-| Dossiers | Table, filtres, vue détail, statuts, export ZIP | admin, agent |
-| Témoignages | CRUD, photo, publication, réordonnancement | admin |
-| Textes du site | Édition de tous les textes publics | admin |
-| Contenu du site › Services | Fiches de programmes, image, publication, ordre | admin |
-| Contenu du site › Questions fréquentes | Thèmes et questions, publication, ordre | admin |
-| Contenu du site › Blocs de page | Composition des pages, bloc par bloc | admin |
-| Contenu du site › Équipe | Membres présentés sur « À propos » | admin |
-| Contenu du site › Apparence | Couleurs, logo, police, thème sombre | admin |
-| Dossiers arrivés à échéance | File des dossiers attendant une décision de conservation | admin |
-| Comptes et rôles | Création de comptes, attribution des rôles | admin |
-| Mon profil / Sécurité | Nom, e-mail, mot de passe, double authentification | admin, agent |
+La navigation suit trois questions différentes : **traiter les dossiers**,
+**tenir le site**, **administrer les comptes**. Un écran appartient au groupe de
+la question à laquelle il répond, pas à la table qu'il manipule.
+
+| Groupe | Section | Contenu | Accès |
+|---|---|---|---|
+| — | Tableau de bord | Dossiers par statut, du mois, 5 derniers reçus | admin, agent |
+| **Dossiers** | Dossiers | Table, filtres, vue détail, statuts, export ZIP | admin, agent |
+| **Dossiers** | Arrivés à échéance | File des dossiers attendant une décision de conservation | admin |
+| **Contenu du site** | Textes des pages | Tous les textes publics, par page | admin |
+| **Contenu du site** | Services | Fiches de programmes, image, périmètre, tarif | admin |
+| **Contenu du site** | Questions fréquentes | Thèmes et questions, publication, ordre | admin |
+| **Contenu du site** | Composition des pages | Blocs empilables, bloc par bloc | admin |
+| **Contenu du site** | Équipe | Membres présentés sur « À propos » | admin |
+| **Contenu du site** | Témoignages | CRUD, photo, pays, programme, publication | admin — consultation : agent |
+| **Contenu du site** | Apparence | Couleurs, logo, police, thème sombre | admin |
+| **Administration** | Comptes et rôles | Création de comptes, attribution des rôles | admin |
+| — | Mon profil / Sécurité | Nom, e-mail, mot de passe, double authentification | admin, agent |
+
+> **Témoignages et Textes des pages sont du contenu**, pas des rubriques à part :
+> ils s'affichent sur le site public au même titre qu'un service ou une question.
+> Les isoler du groupe « Contenu du site » n'aurait de sens que pour qui connaît
+> le schéma de la base.
 
 **Rôles :**
 
 - `admin` — tous les droits, y compris les suppressions, les textes du site et
   la gestion des comptes.
-- `agent` — consultation des dossiers, changement de statut, notes internes.
-  Ni suppression, ni textes du site, ni gestion des comptes.
+- `agent` — consultation des dossiers, changement de statut, notes internes, et
+  **lecture seule** des témoignages. Ni suppression, ni contenu du site, ni
+  gestion des comptes.
 
 ### Apparence : logo, couleurs et police
 
@@ -378,6 +388,35 @@ php artisan db:seed --class=SiteContentSeeder
 ```
 
 Le cache est invalidé automatiquement à chaque sauvegarde (`SiteContentObserver`).
+
+#### Où se modifie quoi
+
+| Ce qu'on voit sur le site | Où le modifier |
+|---|---|
+| Titre et sous-titre du hero, boutons, mention | Textes des pages › **Page d'accueil** › section **Bannière principale** |
+| Image du hero | Même section, champ **Image** (téléversement) |
+| Chiffres sous le hero | Textes des pages › **Bande de réassurance** |
+| Étapes « Comment ça se passe » | Textes des pages › Page d'accueil › **Étapes du processus** |
+| Cartes de services, tarif, périmètre | Contenu du site › **Services** |
+| Questions fréquentes | Contenu du site › **Questions fréquentes** |
+| Blocs libres d'une page | Contenu du site › **Composition des pages** |
+| Membres présentés sur À propos | Contenu du site › **Équipe** |
+| Couleurs, logo, police, thème sombre | Contenu du site › **Apparence** |
+| Coordonnées du pied de page | Textes des pages › Général › **Pied de page** |
+
+Le formulaire d'un bloc de textes est **découpé en sections repliables** —
+Bannière principale, Étapes du processus, Référencement, Pied de page… — comme
+les autres écrans du back-office. Une page d'accueil compte une trentaine de
+textes ; les livrer en liste à plat obligerait à relire chaque libellé pour
+retrouver celui qu'on cherche. Le regroupement se fait sur le préfixe de la clé
+(`hero_`, `etape_`, `meta_`…) : une clé ajoutée au seeder qui ne correspond à
+aucun préfixe atterrit simplement dans « Contenu de la page ».
+
+Une clé dont le nom se termine par **`_image`** est rendue en champ de
+téléversement, pas en champ texte : la cliente n'a aucun moyen de connaître un
+chemin de stockage. Les règles sont celles de `ContentImage` — disque public,
+1600 px, 4 Mo. Ces clés sont livrées **vides**, jamais avec un placeholder, qui
+serait pris pour un nom de fichier.
 
 ### Contenu structuré : services, FAQ, blocs de page, équipe
 

@@ -8,6 +8,7 @@ use App\Filament\Resources\PageSections\Pages\ListPageSections;
 use App\Filament\Resources\Services\Pages\CreateService;
 use App\Filament\Resources\Services\Pages\EditService;
 use App\Filament\Resources\Services\Pages\ListServices;
+use App\Filament\Resources\SiteContents\Pages\EditSiteContent;
 use App\Filament\Resources\TeamMembers\Pages\EditTeamMember;
 use App\Filament\Resources\TeamMembers\Pages\ListTeamMembers;
 use App\Models\FaqCategory;
@@ -17,6 +18,7 @@ use App\Models\SiteContent;
 use App\Models\TeamMember;
 use App\Models\User;
 use Database\Seeders\SiteContentSeeder;
+use Filament\Forms\Components\FileUpload;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 
@@ -74,6 +76,26 @@ it('ne propose plus les champs remplacés par les tables dédiées', function ()
     expect($faq)->toHaveKeys(['titre', 'introduction', 'recherche_placeholder', 'vide', 'cta_titre']);
 });
 
+it('offre un téléversement, et non un champ texte, pour les images de page', function () {
+    $this->seed(SiteContentSeeder::class);
+    $this->actingAs(personnelContenu('admin'));
+
+    $bloc = SiteContent::query()->where('key', 'accueil')->sole();
+
+    // Un champ texte attendant un chemin de stockage serait inutilisable :
+    // la cliente n'a aucun moyen de connaître ce chemin.
+    Livewire::test(EditSiteContent::class, ['record' => $bloc->getRouteKey()])
+        ->assertOk()
+        ->assertFormFieldExists(
+            'content.hero_image',
+            checkFieldUsing: fn ($field): bool => $field instanceof FileUpload,
+        );
+
+    // Et la valeur livrée est vide, pas un placeholder : le téléverseur
+    // croirait sinon avoir un fichier nommé « [À COMPLÉTER…] ».
+    expect($bloc->content['hero_image'])->toBe('');
+});
+
 it('réunit les contenus sous « Contenu du site » dans la navigation', function () {
     $this->actingAs(personnelContenu('admin'))
         ->get('/admin')
@@ -84,12 +106,16 @@ it('réunit les contenus sous « Contenu du site » dans la navigation', functio
         ->assertSee('Équipe');
 });
 
-it('cache le contenu du site à un agent', function () {
-    $this->actingAs(personnelContenu('agent'))
-        ->get('/admin')
-        ->assertOk()
-        ->assertDontSee('Contenu du site')
-        ->assertDontSee('Composition des pages');
+it('ne montre à un agent que les témoignages, en lecture', function () {
+    // TestimonialPolicy autorise délibérément la consultation par un agent :
+    // il peut avoir besoin de relire un témoignage, sans jamais publier au nom
+    // du cabinet. Le reste de la vitrine lui reste fermé.
+    $reponse = $this->actingAs(personnelContenu('agent'))->get('/admin')->assertOk();
+
+    $reponse->assertSee('Témoignages')
+        ->assertDontSee('Composition des pages')
+        ->assertDontSee('Textes des pages')
+        ->assertDontSee('Apparence');
 });
 
 it('affiche le logo du back-office à taille contrainte', function () {

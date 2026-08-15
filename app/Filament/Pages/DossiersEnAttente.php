@@ -15,6 +15,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
+use UnitEnum;
 
 /**
  * La file des dossiers arrivés à échéance.
@@ -31,11 +32,13 @@ class DossiersEnAttente extends Page implements HasTable
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBoxArrowDown;
 
+    protected static string|UnitEnum|null $navigationGroup = 'Dossiers';
+
     protected static ?string $title = 'Dossiers arrivés à échéance';
 
-    protected static ?string $navigationLabel = 'Dossiers arrivés à échéance';
+    protected static ?string $navigationLabel = 'Arrivés à échéance';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.dossiers-en-attente';
 

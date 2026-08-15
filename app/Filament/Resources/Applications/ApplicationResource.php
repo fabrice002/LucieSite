@@ -18,12 +18,15 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use UnitEnum;
 
 class ApplicationResource extends Resource
 {
     protected static ?string $model = Application::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedInbox;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Dossiers';
 
     protected static ?string $modelLabel = 'dossier';
 

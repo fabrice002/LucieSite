@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use UnitEnum;
 
 class UserResource extends Resource
 {
@@ -24,9 +25,11 @@ class UserResource extends Resource
 
     protected static ?string $pluralModelLabel = 'comptes';
 
+    protected static string|UnitEnum|null $navigationGroup = 'Administration';
+
     protected static ?string $navigationLabel = 'Comptes et rôles';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
 

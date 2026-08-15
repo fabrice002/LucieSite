@@ -45,7 +45,9 @@ class Apparence extends Page
 
     protected static ?string $navigationLabel = 'Apparence';
 
-    protected static ?int $navigationSort = 5;
+    // En dernier du groupe : on règle l'apparence une fois, on écrit du contenu
+    // tous les jours.
+    protected static ?int $navigationSort = 9;
 
     protected string $view = 'filament.pages.apparence';
 
