@@ -54,6 +54,9 @@ function dossierDontActiviteRemonteA(CarbonInterface $activite, string $referenc
     $application->forceFill([
         'created_at' => $activite,
         'updated_at' => $activite,
+        // L'échéance découle de la dernière activité. On la fige ici aussi :
+        // saveQuietly() court-circuite l'observateur qui la tient à jour.
+        'retention_due_at' => $activite->copy()->addMonths((int) config('retention.months', 36)),
     ])->saveQuietly();
 
     return $application;
@@ -126,16 +129,20 @@ it('affiche la case de consentement et le lien vers la politique', function () {
 |--------------------------------------------------------------------------
 */
 
-it('efface un dossier vivant resté sans activité 36 mois', function () {
+it('met en attente de décision un dossier resté sans activité 36 mois, sans rien effacer', function () {
     $abandonne = dossierDontActiviteRemonteA(now()->subMonths(40), 'LN-2023-00001');
     $chemin = $abandonne->documents()->first()->path;
 
     $resultat = app(PurgeExpiredApplications::class)();
 
-    expect($resultat['inactifs'])->toBe(1)
-        ->and(Application::withTrashed()->whereKey($abandonne->id)->exists())->toBeFalse();
+    // Le comportement a délibérément changé : détruire des pièces d'identité ne
+    // repose plus sur un silence de trois ans, mais sur une décision humaine.
+    expect($resultat['en_attente'])->toBe(1)
+        ->and($resultat['dossiers'])->toBe(0)
+        ->and(Application::whereKey($abandonne->id)->exists())->toBeTrue()
+        ->and($abandonne->refresh()->attendUneDecision())->toBeTrue();
 
-    Storage::disk(SubmitApplication::DISK)->assertMissing($chemin);
+    Storage::disk(SubmitApplication::DISK)->assertExists($chemin);
 });
 
 it('épargne un dossier ancien mais toujours suivi', function () {
@@ -165,16 +172,14 @@ it('épargne un dossier récent', function () {
     expect(Application::whereKey($recent->id)->exists())->toBeTrue();
 });
 
-it('prévient les administrateurs 30 jours avant l\'échéance', function () {
+it('prévient les administrateurs à J-30 puis à J-7', function (int $jours) {
     Notification::fake();
 
     $admin = equipe('admin');
-    // Au coeur de la fenêtre : purgeable dans quinze jours, pas encore aujourd'hui.
-    $bientot = dossierDontActiviteRemonteA(now()->subMonths(36)->addDays(15), 'LN-2023-00004');
+    $bientot = dossierDontActiviteRemonteA(now()->subMonths(36)->addDays($jours), 'LN-2023-00004');
 
     $this->artisan('ln:purge-applications')->assertSuccessful();
 
-    // Le préavis part…
     Notification::assertSentTo(
         $admin,
         ApplicationsNearingExpiry::class,
@@ -182,11 +187,27 @@ it('prévient les administrateurs 30 jours avant l\'échéance', function () {
             ->contains(fn (Application $a): bool => $a->is($bientot)),
     );
 
-    // …et le dossier est toujours là : c'est un préavis, pas un effacement.
-    expect(Application::whereKey($bientot->id)->exists())->toBeTrue();
+    // Le dossier est toujours là, et pas encore en attente : c'est un préavis.
+    expect(Application::whereKey($bientot->id)->exists())->toBeTrue()
+        ->and($bientot->refresh()->attendUneDecision())->toBeFalse();
+})->with([
+    'trente jours avant' => 30,
+    'sept jours avant' => 7,
+]);
+
+it('n\'envoie pas de préavis en dehors des deux jalons', function () {
+    Notification::fake();
+
+    equipe('admin');
+    dossierDontActiviteRemonteA(now()->subMonths(36)->addDays(15), 'LN-2023-00010');
+
+    $this->artisan('ln:purge-applications')->assertSuccessful();
+
+    // Un préavis quotidien pendant un mois finirait à la corbeille sans être lu.
+    Notification::assertNotSentTo(equipe('admin'), ApplicationsNearingExpiry::class);
 });
 
-it('couvre les deux règles en mode simulation, sans rien effacer', function () {
+it('distingue en simulation ce qui bascule et ce qui s\'efface', function () {
     $abandonne = dossierDontActiviteRemonteA(now()->subMonths(40), 'LN-2023-00005');
 
     $supprime = Application::factory()->create(['reference' => 'LN-2025-00006']);
@@ -194,12 +215,15 @@ it('couvre les deux règles en mode simulation, sans rien effacer', function () 
     $supprime->forceFill(['deleted_at' => now()->subDays(120)])->saveQuietly();
 
     $this->artisan('ln:purge-applications --dry-run')
-        ->expectsOutputToContain('2 dossier(s) seraient supprimés')
-        ->expectsOutputToContain('sans activité depuis 36 mois')
+        // Le dossier abandonné bascule en attente ; seul le dossier déjà
+        // supprimé par un humain part réellement.
+        ->expectsOutputToContain('1 dossier(s) basculeraient en attente de décision')
+        ->expectsOutputToContain('1 dossier(s) seraient effacés définitivement')
         ->assertSuccessful();
 
     // Rien n'a bougé.
     expect(Application::whereKey($abandonne->id)->exists())->toBeTrue()
+        ->and($abandonne->refresh()->attendUneDecision())->toBeFalse()
         ->and(Application::onlyTrashed()->whereKey($supprime->id)->exists())->toBeTrue();
 });
 

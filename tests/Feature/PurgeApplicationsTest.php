@@ -35,7 +35,13 @@ it('efface définitivement les dossiers supprimés depuis plus de 90 jours', fun
 
     $resultat = app(PurgeExpiredApplications::class)();
 
-    expect($resultat)->toBe(['dossiers' => 1, 'fichiers' => 1, 'supprimes' => 1, 'inactifs' => 0]);
+    expect($resultat)->toBe([
+        'dossiers' => 1,
+        'fichiers' => 1,
+        'supprimes' => 1,
+        'marques' => 0,
+        'en_attente' => 0,
+    ]);
 
     // La ligne a disparu, y compris de la corbeille.
     expect(Application::withTrashed()->whereKey($ancien->id)->exists())->toBeFalse()
@@ -85,13 +91,13 @@ it('expose une commande artisan, avec un mode simulation', function () {
 
     // Le mode simulation annonce sans rien effacer.
     $this->artisan('ln:purge-applications --dry-run')
-        ->expectsOutputToContain('1 dossier(s) seraient supprimés')
+        ->expectsOutputToContain('1 dossier(s) seraient effacés définitivement')
         ->assertSuccessful();
 
     expect(Application::onlyTrashed()->count())->toBe(1);
 
     $this->artisan('ln:purge-applications')
-        ->expectsOutputToContain('1 dossier(s) et 1 fichier(s) supprimés')
+        ->expectsOutputToContain('1 dossier(s) et 1 fichier(s) effacés')
         ->assertSuccessful();
 
     expect(Application::withTrashed()->count())->toBe(0);

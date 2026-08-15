@@ -381,6 +381,11 @@ combinez l'IP et l'adresse e-mail. La ligne exacte figure en commentaire dans
       surtout ce qui ne l'est pas
 - [ ] Photos fournies par la cliente, **jamais d'image de banque**. À défaut, les
       emplacements affichent un aplat de la charte — c'est préférable
+- [ ] **Au moins un compte `admin` avec une adresse e-mail relevée** : c'est
+      lui qui reçoit les rappels de conservation. Sans destinataire, des
+      dossiers attendraient indéfiniment une décision que personne ne verrait
+- [ ] `php artisan ln:purge-applications --dry-run` exécuté une fois : vérifier
+      que le nombre de bascules annoncé correspond à ce qui est attendu
 - [ ] Mentions légales et politique de confidentialité rédigées
 - [ ] Coordonnées du cabinet renseignées : adresse, téléphone, WhatsApp, e-mail,
       horaires. Vérifier que les liens `tel:`, `mailto:` et WhatsApp aboutissent
@@ -543,9 +548,17 @@ php artisan schedule:list                   # les cinq tâches sont là
 
 ### Points d'attention
 
-- **`storage/app/private` grossit en continu.** La purge à 90 jours ne concerne
-  que les dossiers supprimés ; celle à 36 mois, les dossiers sans activité. Un
-  cabinet actif accumule malgré tout. Surveillez l'espace disque.
+- **`storage/app/private` grossit en continu, et plus vite qu'avant.** Seuls
+  sont effacés automatiquement les dossiers supprimés depuis plus de 90 jours.
+  Les dossiers arrivés à échéance ne partent **que sur décision humaine** :
+  tant que la file « Dossiers arrivés à échéance » n'est pas traitée, leurs
+  scans restent sur le disque. Surveillez l'espace, et surtout **traitez la
+  file** — c'est la contrepartie assumée de ne rien supprimer tout seul.
+
+- **Le bandeau du tableau de bord n'est pas un bug.** Il reste affiché tant
+  qu'un dossier attend une décision, sans bouton de fermeture. Si on demande à
+  le masquer, la réponse est de traiter la file. Le rendre masquable rendrait
+  la conservation inopérante.
 
 - **Ne pas recevoir d'alerte n'est pas rassurant en soi.** Les notifications
   passent elles-mêmes par la file d'attente : si le worker est arrêté, l'alerte

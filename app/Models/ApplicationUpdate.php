@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Enums\ApplicationStatus;
+use App\Observers\ApplicationUpdateObserver;
 use App\Policies\ApplicationUpdatePolicy;
 use Database\Factories\ApplicationUpdateFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,6 +36,7 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $author
  */
 #[UsePolicy(ApplicationUpdatePolicy::class)]
+#[ObservedBy(ApplicationUpdateObserver::class)]
 #[Fillable([
     'application_id',
     'user_id',

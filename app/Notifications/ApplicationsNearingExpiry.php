@@ -10,11 +10,13 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
 
 /**
- * Préavis d'effacement : ces dossiers arrivent au bout de leur conservation.
+ * Préavis : ces dossiers approchent du bout de leur conservation.
  *
- * Le rapport laisse au cabinet le temps de faire une exception — reprendre
- * contact avec un candidat, ou simplement rouvrir le dossier, ce qui suffit à
- * en repousser l'échéance.
+ * Envoyé à J-30 puis à J-7. Aucun effacement n'est annoncé — à l'échéance, le
+ * dossier entre simplement dans la file d'attente de décision.
+ *
+ * Le préavis sert à éviter d'y arriver : reprendre contact avec un candidat, ou
+ * simplement intervenir sur le dossier, suffit à repousser l'échéance.
  */
 class ApplicationsNearingExpiry extends Notification implements ShouldQueue
 {
@@ -44,9 +46,11 @@ class ApplicationsNearingExpiry extends Notification implements ShouldQueue
         $mois = (int) config('retention.months', 36);
 
         $message = (new MailMessage)
-            ->subject($this->applications->count().' dossier(s) seront effacés dans '.$preavis.' jours')
-            ->line("Les dossiers suivants n'ont connu aucune activité depuis {$mois} mois.")
-            ->line("Ils seront **définitivement effacés**, fichiers compris, d'ici {$preavis} jours.");
+            ->subject($this->applications->count().' dossier(s) arriveront à échéance dans '.$preavis.' jours')
+            ->line("Les dossiers suivants n'ont connu aucune activité depuis près de {$mois} mois.")
+            ->line("Dans {$preavis} jours, ils entreront dans la file **« Dossiers arrivés à échéance ».** "
+                .'Rien ne sera supprimé : il vous reviendra alors de les conserver douze mois de plus, '
+                .'ou de les effacer.');
 
         foreach ($this->applications as $application) {
             $message->line(sprintf(
@@ -59,7 +63,7 @@ class ApplicationsNearingExpiry extends Notification implements ShouldQueue
         }
 
         return $message
-            ->line('Pour conserver l\'un d\'eux, il suffit de l\'ouvrir dans le back-office et d\'y intervenir : toute activité repousse l\'échéance.')
+            ->line('Pour éviter qu\'un dossier n\'arrive à échéance, il suffit de l\'ouvrir dans le back-office et d\'y intervenir : toute activité repousse la date.')
             ->action('Ouvrir le back-office', url('/admin/applications'))
             ->salutation('LN Immigration');
     }

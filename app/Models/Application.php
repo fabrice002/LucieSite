@@ -3,9 +3,15 @@
 namespace App\Models;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\RetentionState;
+// Les dates de conservation sont écrites depuis le code (now()->addMonths(…)),
+// et AppServiceProvider fixe CarbonImmutable comme classe de date.
+use App\Observers\ApplicationRetentionObserver;
 use App\Policies\ApplicationPolicy;
+use Carbon\CarbonImmutable;
 use Database\Factories\ApplicationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\RouteKey;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Collection;
@@ -32,6 +38,9 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string|null $ip_address
  * @property Carbon|null $consented_at
  * @property string|null $privacy_version
+ * @property RetentionState|null $retention_state
+ * @property CarbonImmutable|null $retention_due_at
+ * @property CarbonImmutable|null $retention_reminded_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -58,7 +67,11 @@ use Spatie\Activitylog\Traits\LogsActivity;
     'ip_address',
     'consented_at',
     'privacy_version',
+    'retention_state',
+    'retention_due_at',
+    'retention_reminded_at',
 ])]
+#[ObservedBy(ApplicationRetentionObserver::class)]
 class Application extends Model
 {
     /** @use HasFactory<ApplicationFactory> */
@@ -94,7 +107,47 @@ class Application extends Model
         return [
             'status' => ApplicationStatus::class,
             'consented_at' => 'datetime',
+            'retention_state' => RetentionState::class,
+            'retention_due_at' => 'datetime',
+            'retention_reminded_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Les colonnes qui ne décrivent pas le dossier, mais sa conservation.
+     *
+     * Les modifier ne doit pas compter comme une activité : sans quoi envoyer
+     * un rappel repousserait l'échéance qu'il annonce.
+     *
+     * @var list<string>
+     */
+    public const COLONNES_DE_CONSERVATION = [
+        'retention_state',
+        'retention_due_at',
+        'retention_reminded_at',
+    ];
+
+    /**
+     * Le dossier attend-il une décision de conservation ?
+     */
+    public function attendUneDecision(): bool
+    {
+        return $this->retention_state === RetentionState::EnAttenteDeDecision;
+    }
+
+    /**
+     * Repousse l'échéance de conservation, sans enregistrer.
+     *
+     * Un seul endroit calcule cette date : l'observateur du dossier l'appelle
+     * sur toute activité, et celui des messages au candidat également. Le
+     * dossier quitte du même coup la file d'attente, et les rappels repartent
+     * de zéro.
+     */
+    public function repousserEcheance(): void
+    {
+        $this->retention_due_at = now()->addMonths((int) config('retention.months', 36));
+        $this->retention_state = null;
+        $this->retention_reminded_at = null;
     }
 
     /**

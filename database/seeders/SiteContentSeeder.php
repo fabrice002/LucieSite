@@ -446,8 +446,14 @@ class SiteContentSeeder extends Seeder
                     'conservation_titre' => 'Durée de conservation',
                     'conservation_html' => '<p>Nous ne conservons vos données que le temps nécessaire :</p>'
                         .'<ul>'
-                        .'<li>un dossier <strong>sans aucune activité depuis 36 mois</strong> est définitivement '
-                        .'effacé, documents compris ;</li>'
+                        // Le texte doit décrire ce que fait réellement le code.
+                        // Annoncer un effacement automatique alors qu'une
+                        // décision humaine est requise serait inexact — et
+                        // c'est un document juridique.
+                        .'<li>un dossier <strong>sans aucune activité depuis 36 mois</strong> est signalé pour '
+                        .'réexamen. Le cabinet décide alors, dossier par dossier, de le conserver douze mois de '
+                        .'plus ou de l\'effacer définitivement, documents compris. Aucune destruction n\'a lieu '
+                        .'sans cette décision ;</li>'
                         .'<li>un dossier <strong>supprimé</strong> par le cabinet l\'est définitivement au bout de '
                         .'90 jours ;</li>'
                         .'<li>un effacement demandé par vos soins est exécuté sans attendre ces délais.</li>'

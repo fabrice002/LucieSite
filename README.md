@@ -178,6 +178,7 @@ Tout est réuni sous **`/admin`**. Il n'existe pas d'autre espace authentifié :
 | Contenu du site › Blocs de page | Composition des pages, bloc par bloc | admin |
 | Contenu du site › Équipe | Membres présentés sur « À propos » | admin |
 | Contenu du site › Apparence | Couleurs, logo, police, thème sombre | admin |
+| Dossiers arrivés à échéance | File des dossiers attendant une décision de conservation | admin |
 | Comptes et rôles | Création de comptes, attribution des rôles | admin |
 | Mon profil / Sécurité | Nom, e-mail, mot de passe, double authentification | admin, agent |
 
@@ -237,7 +238,7 @@ téléchargés au build : ajouter la famille dans `vite.config.js` **et** dans
 
 | Table | Rôle | Points d'attention |
 |---|---|---|
-| `applications` | Un dossier déposé | `reference` unique (`LN-2026-00147`), l'`id` n'est jamais exposé. `SoftDeletes`. `internal_notes` **strictement privé**. `consented_at` + `privacy_version` |
+| `applications` | Un dossier déposé | `reference` unique (`LN-2026-00147`), l'`id` n'est jamais exposé. `SoftDeletes`. `internal_notes` **strictement privé**. `consented_at` + `privacy_version`. `retention_state` / `retention_due_at` / `retention_reminded_at` : la conservation, **indépendante** de `status` |
 | `documents` | Une ligne **par fichier** | `path` en UUID sur le disque privé, `original_name` pour l'affichage seul. `scan_status` renseigné par ClamAV |
 | `application_updates` | Messages adressés au candidat | Lisibles sur la page de suivi. `applications.status` reste la source de vérité du statut |
 | `testimonials` | Témoignages | Créés uniquement depuis le back-office. `photo_path` sur le disque **public** — le seul fichier qui y va. `author_programme` affiché avec le pays : un témoignage sans contexte ne rassure personne |
@@ -436,11 +437,9 @@ négociables.
 5. Le formulaire est protégé par un **champ honeypot** et un limiteur de
    5 tentatives par minute.
 6. `SoftDeletes` sur les dossiers, avec **purge définitive après 90 jours**,
-   fichiers compris. Un dossier **vivant mais sans aucune activité depuis
-   36 mois** (`RETENTION_MONTHS`) est également effacé : sans cette règle, un
-   dossier « validé » conserverait un passeport indéfiniment. Un préavis part
-   aux comptes `admin` 30 jours avant, pour permettre une exception — toute
-   intervention sur le dossier repousse l'échéance.
+   fichiers compris. Un dossier **sans aucune activité depuis 36 mois**
+   (`RETENTION_MONTHS`) n'est jamais effacé automatiquement : il passe en
+   attente d'une décision humaine — voir « Conservation » ci-dessous.
 7. L'inscription publique est **désactivée**. Les comptes se créent en console.
 8. L'accès au back-office exige un **e-mail vérifié et un rôle**.
 9. Les documents sont **toujours servis en pièce jointe**, avec
@@ -533,8 +532,48 @@ Le serveur doit exécuter le planificateur **toutes les minutes** :
 | `backup:run` | 01h30 |
 | `ln:purge-applications` | 03h30 |
 
-`ln:purge-applications` accepte `--dry-run` : il annonce alors les deux règles
-et liste les dossiers arrivant à échéance, sans rien effacer.
+`ln:purge-applications` accepte `--dry-run` : il annonce alors ce qui
+basculerait en attente et ce qui serait effacé, sans rien modifier.
+
+### Conservation : aucune suppression sans décision humaine
+
+Détruire des scans de passeports ne doit jamais reposer sur un silence. Un
+dossier oublié pendant trois ans n'est donc **pas** supprimé : il est présenté à
+une décision.
+
+| Étape | Ce qui se passe |
+|---|---|
+| Échéance atteinte | `retention_state` passe à `en_attente_de_decision`. **Rien n'est supprimé**, les fichiers restent intacts |
+| Back-office | Le dossier apparaît dans **Dossiers arrivés à échéance**, avec un compteur dans la navigation |
+| Tableau de bord | Un bandeau s'affiche tant que la file n'est pas vide. Ni masquable, ni désactivable |
+| Rappels | Préavis à J-30 et J-7, puis relance **mensuelle sans fin** aux comptes `admin` |
+| Décision | « Conserver 12 mois de plus », ou « Effacer définitivement ». Les deux sont journalisées avec leur auteur |
+
+`ln:purge-applications` n'efface plus que deux catégories, toutes deux issues
+d'un acte humain : les dossiers **supprimés depuis plus de 90 jours**, et ceux
+qu'un administrateur a **explicitement marqués** pour effacement.
+
+**La contrepartie est assumée** : si personne ne traite la file, ces pièces
+d'identité restent stockées — exactement ce que la règle de conservation
+cherchait à éviter. C'est pourquoi le bandeau ne se ferme pas et le rappel
+mensuel ne s'arrête jamais. Ne les rendez ni masquables, ni désactivables.
+
+#### Deux axes distincts
+
+`retention_state` est **séparé** de `applications.status`. Le premier dit où en
+est la conservation, le second où en est le projet du candidat. Un dossier
+« validé » peut parfaitement arriver à échéance ; écraser son statut par une
+information de conservation ferait perdre, sans retour possible, ce que le
+cabinet sait du dossier.
+
+#### Ce qui repousse l'échéance
+
+Toute activité réelle : changement de statut, note interne, message au candidat.
+`retention_due_at` est alors recalculé par `ApplicationRetentionObserver`.
+
+Les écritures qui ne concernent que la conservation elle-même — envoi d'un
+rappel, mise en file — en sont exclues, faute de quoi un rappel repousserait
+l'échéance qu'il signale et le dossier ne serait jamais présenté à une décision.
 
 ### Consentement et droit à l'effacement
 
